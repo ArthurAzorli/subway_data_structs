@@ -4,12 +4,9 @@ project(Trabalho01 C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(Trabalho01
-        project/core/bytes/byte_array.c
-        main.c
-        project/core/bytes/byte_stream.c
-        project/core/bytes/byte_stream.h
         project/service/data_base_repository.c
         project/service/data_base_repository.h
         project/domain/subway_line_record.h
         project/core/file/file_repository.c
-        project/core/file/file_repository.h)
+        project/core/file/file_repository.h
+        project/tests/file_repository_test.c)
