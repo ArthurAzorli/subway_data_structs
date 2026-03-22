@@ -6,21 +6,24 @@
 int main() {
     const char *path = "test_datafile.bin";
 
-    // 1. Cria ou abre arquivo
     struct DataFile *df = DataFileFileRepository_openOrCreate((String)path);
     assert(df != NULL);
 
-    // 2. Escreve valores
-    assert(FileRepository_writeBool(df, 1, true));
-    assert(FileRepository_writeByte(df, 2, 0xAB));
-    assert(FileRepository_writeInt(df, 3, 123456));
+    // Escreve valores sequenciais
+    assert(FileRepository_writeBool(df, true));
+    assert(FileRepository_writeByte(df, 0xAB));
+    assert(FileRepository_writeInt(df, LITTLE_ENDIAN, 123456));
     const char *msg = "Hello";
-    assert(FileRepository_writeString(df, 7, strlen(msg), msg));
+    assert(FileRepository_writeString(df, strlen(msg), msg));
 
-    // 3. Fecha no meio da operação
+    // Escreve em ambos endians
+    uint32_t val = 0x12345678;
+    assert(FileRepository_writeInt(df, LITTLE_ENDIAN, val));
+    assert(FileRepository_writeInt(df, BIG_ENDIAN, val));
+
     FileRepository_close(df);
 
-    // 4. Reabre e confirma leitura
+    // Reabre
     df = DataFileFileRepository_openOrCreate((String)path);
     assert(df != NULL);
 
@@ -28,20 +31,26 @@ int main() {
     uint8_t by;
     uint32_t i;
     char str[16];
+    uint32_t readLE, readBE;
 
-    assert(FileRepository_readBool(df, 1, &b));
+    assert(FileRepository_readBool(df, &b));
     assert(b == true);
 
-    assert(FileRepository_readByte(df, 2, &by));
+    assert(FileRepository_readByte(df, &by));
     assert(by == 0xAB);
 
-    assert(FileRepository_readInt(df, 3, &i));
+    assert(FileRepository_readInt(df, LITTLE_ENDIAN, &i));
     assert(i == 123456);
 
-    assert(FileRepository_readString(df, 7, strlen(msg), str));
+    assert(FileRepository_readString(df, strlen(msg), str));
     assert(strcmp(str, "Hello") == 0);
 
-    // 5. Flush e fecha
+    assert(FileRepository_readInt(df, LITTLE_ENDIAN, &readLE));
+    assert(FileRepository_readInt(df, BIG_ENDIAN, &readBE));
+
+    assert(readLE == val);
+    assert(readBE == val);
+
     assert(FileRepository_flush(df));
     FileRepository_close(df);
 

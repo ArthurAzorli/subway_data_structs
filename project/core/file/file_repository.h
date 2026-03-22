@@ -9,23 +9,32 @@
 
 struct DataFile;
 
+typedef enum {
+    LITTLE_ENDIAN,
+    BIG_ENDIAN,
+} Endianness;
+
 struct DataFile *DataFileFileRepository_openOrCreate(String path);
 
-bool FileRepository_readBool(const struct DataFile *dataFile, long byteOffset, bool *result);
+size_t FileRepository_fileSize(const struct DataFile *dataFile);
 
-bool FileRepository_readByte(const struct DataFile *dataFile, long byteOffset, uint8_t *result);
+bool FileRepository_goTo(struct DataFile *dataFile, long byteOffset);
 
-bool FileRepository_readInt(const struct DataFile *dataFile, long byteOffset, uint32_t *result);
+bool FileRepository_readBool(struct DataFile *dataFile, bool *result);
 
-bool FileRepository_readString(const struct DataFile *dataFile, long byteOffset, size_t length, char *result);
+bool FileRepository_readByte(struct DataFile *dataFile, uint8_t *result);
 
-bool FileRepository_writeBool(struct DataFile *dataFile, long byteOffset, bool value);
+bool FileRepository_readInt(struct DataFile *dataFile, Endianness endianness,  uint32_t *result);
 
-bool FileRepository_writeByte(struct DataFile *dataFile, long byteOffset, uint8_t value);
+bool FileRepository_readString(struct DataFile *dataFile, size_t length, char *result);
 
-bool FileRepository_writeInt(struct DataFile *dataFile, long byteOffset, uint32_t value);
+bool FileRepository_writeBool(struct DataFile *dataFile, bool value);
 
-bool FileRepository_writeString(struct DataFile *dataFile, long byteOffset, size_t length, const char *value);
+bool FileRepository_writeByte(struct DataFile *dataFile, uint8_t value);
+
+bool FileRepository_writeInt(struct DataFile *dataFile, Endianness endianness, uint32_t value);
+
+bool FileRepository_writeString(struct DataFile *dataFile, size_t length, String value);
 
 bool FileRepository_flush(struct DataFile *dataFile);
 
