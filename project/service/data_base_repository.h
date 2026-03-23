@@ -6,18 +6,21 @@
 
 #define EMPTY 0xFFFFFFFF
 
+struct DataBase;
 
-struct DataFile* DataBaseRepository_init(String path);
+struct DataBase *DataBaseRepository_init(String path);
 
-bool DataBaseRepository_createRecord(struct DataFile dataBase, struct SubwayLineRecord *record);
+bool DataBaseRepository_createRecord(struct DataBase* dataBase, struct SubwayLineRecord *record);
 
-struct SubwayLineRecord *DataBaseRepository_readRecord(struct DataFile dataBase, const size_t byteOffset);
+struct SubwayLineRecord *DataBaseRepository_readRecord(const struct DataBase* dataBase, size_t rrn);
 
-bool DataBaseRepository_updateRecord(struct DataFile dataBase, const struct SubwayLineRecord *record);
+bool DataBaseRepository_updateRecord(struct DataBase* dataBase, const struct SubwayLineRecord *record);
 
-bool DataBaseRepository_deleteRecord(struct DataFile dataBase, const size_t byteOffset);
+bool DataBaseRepository_deleteRecord(struct DataBase* dataBase, size_t rrn);
 
-void DataBaseRepository_close(struct DataFile dataBase);
+bool DataBaseRepository_existRecord(const struct DataBase* dataBase, String stationName);
+
+void DataBaseRepository_close(struct DataBase* dataBase);
 
 
 #endif //DATA_BASE_REPOSITORY_H
