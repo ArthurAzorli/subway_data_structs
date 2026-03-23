@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include "../utils/types.h"
 
+#define  UINT8_BYTES_COUNT 1
+#define  UINT32_BYTES_COUNT 4
+
 struct DataFile;
 
 typedef enum {
@@ -14,11 +17,13 @@ typedef enum {
     BIG_ENDIAN,
 } Endianness;
 
-struct DataFile *DataFileFileRepository_openOrCreate(String path);
+struct DataFile *FileRepository_openOrCreate(String path);
 
 size_t FileRepository_fileSize(const struct DataFile *dataFile);
 
-bool FileRepository_goTo(struct DataFile *dataFile, long byteOffset);
+bool FileRepository_move(struct DataFile *dataFile, long movement);
+
+bool FileRepository_goTo(struct DataFile *dataFile, size_t byteOffset);
 
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result);
 

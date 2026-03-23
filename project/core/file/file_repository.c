@@ -7,11 +7,6 @@
 #define CREATE_MODE "w+b"
 #define EDIT_MODE "r+b"
 
-#define  UINT8_BYTES_COUNT 1
-#define  UINT16_BYTES_COUNT 2
-#define  UINT32_BYTES_COUNT 4
-#define  UINT64_BYTES_COUNT 8
-
 struct DataFile {
     FILE *file;
     bool editMode;
@@ -19,7 +14,7 @@ struct DataFile {
     size_t byteOffset;
 };
 
-struct DataFile *DataFileFileRepository_openOrCreate(const String path) {
+struct DataFile *FileRepository_openOrCreate(const String path) {
     struct DataFile *dataFile = malloc(sizeof(struct DataFile));
     if (!dataFile) return NULL;
     dataFile->editMode = false;
@@ -143,14 +138,30 @@ size_t FileRepository_fileSize(const struct DataFile *dataFile) {
     return dataFile->size;
 }
 
-bool FileRepository_goTo(struct DataFile *dataFile, const long byteOffset) {
+bool FileRepository_move(struct DataFile *dataFile, const long movement) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
-    if (byteOffset > dataFile->size || byteOffset < 0) {
+    if (movement == 0) return true;
+    const long byteOffsetFinal = (long)dataFile->byteOffset + movement;
+    if (byteOffsetFinal > dataFile->size || byteOffsetFinal < 0) {
+        printf("ERROR: Invalid ByteOffset access\n");
+        return false;
+    }
+    if (fseek(dataFile->file, movement, SEEK_CUR) != 0) {
+        printf("ERROR: Failed to reposition cursor\n");
+        return false;
+    }
+    dataFile->byteOffset = byteOffsetFinal;
+    return true;
+}
+
+bool FileRepository_goTo(struct DataFile *dataFile, const size_t byteOffset) {
+    if (!FileRepository_isDataFileValid(dataFile)) return false;
+    if (byteOffset > dataFile->size) {
         printf("ERROR: Invalid ByteOffset access\n");
         return false;
     }
     if (byteOffset == dataFile->byteOffset) return true;
-    if (fseek(dataFile->file, byteOffset, SEEK_SET) != 0) {
+    if (fseek(dataFile->file, (long) byteOffset, SEEK_SET) != 0) {
         printf("ERROR: Failed to reposition cursor\n");
         return false;
     }
