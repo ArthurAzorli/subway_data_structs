@@ -8,7 +8,7 @@ struct SubwayLineRecord {
     uint32_t originStationID;
     uint32_t originLineID;
     uint32_t destinationStationID;
-    uint32_t destinationLineID;
+    uint32_t destinationDistant;
     uint32_t interactionStationID;
     uint32_t interactionLineID;
     size_t stationNameLength;
@@ -16,5 +16,9 @@ struct SubwayLineRecord {
     size_t lineNameLength;
     char *lineName;
 };
+
+struct SubwayLineRecord *SubwayLineRecord_init();
+
+void SubwayLineRecord_free(struct SubwayLineRecord *record);
 
 #endif //SUBWAY_LINE_RECORD_H
