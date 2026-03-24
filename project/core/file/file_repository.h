@@ -4,7 +4,6 @@
 
 #ifndef FILE_REPOSITORY_H
 #define FILE_REPOSITORY_H
-#include <stdio.h>
 #include "../utils/types.h"
 
 #define  UINT8_BYTES_COUNT 1

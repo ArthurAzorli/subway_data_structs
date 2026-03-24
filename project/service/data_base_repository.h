@@ -12,7 +12,7 @@ bool DataBaseRepository_createRecord(struct DataBase* dataBase, struct SubwayLin
 
 struct SubwayLineRecord *DataBaseRepository_readRecord(const struct DataBase* dataBase, size_t rrn);
 
-bool DataBaseRepository_updateRecord(struct DataBase* dataBase, const struct SubwayLineRecord *record);
+bool DataBaseRepository_updateRecord(struct DataBase* dataBase, struct SubwayLineRecord *record);
 
 bool DataBaseRepository_deleteRecord(struct DataBase* dataBase, size_t rrn);
 

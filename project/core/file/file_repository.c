@@ -1,8 +1,7 @@
 #include "file_repository.h"
 
+#include <stdio.h>
 #include <stdlib.h>
-
-#include "../bytes/byte_stream.h"
 
 #define CREATE_MODE "w+b"
 #define EDIT_MODE "r+b"

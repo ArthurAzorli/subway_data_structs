@@ -1,11 +1,11 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include "project/service/data_base_repository.h"
-#include "project/domain/subway_line_record.h"
+#include "../service/data_base_repository.h"
+#include "../domain/subway_line_record.h"
 
 int main() {
-    struct DataBase *db = DataBaseRepository_init("test.bin");
+    struct DataBase *db = DataBaseRepository_init("test.db");
     assert(db != NULL);
 
     // Caso 1: Registro válido
