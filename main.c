@@ -11,12 +11,12 @@ int main() {
     // Caso 1: Registro válido
     struct SubwayLineRecord *rec1 = SubwayLineRecord_init();
     rec1->originStationID = 1;
-    rec1->stationName = strdup("Estação Central");
+    rec1->stationName = strdup("Estacao Central");
     rec1->stationNameLength = strlen(rec1->stationName);
     assert(DataBaseRepository_createRecord(db, rec1) == true);
 
     // Deve existir
-    assert(DataBaseRepository_existRecord(db, "Estação Central") == true);
+    assert(DataBaseRepository_existRecord(db, "Estacao Central") == true);
 
     // Caso 2: Registro inválido (stationName nulo)
     struct SubwayLineRecord *rec2 = SubwayLineRecord_init();
@@ -29,7 +29,7 @@ int main() {
     // Caso 3: Registro inválido (originStationID vazio)
     struct SubwayLineRecord *rec3 = SubwayLineRecord_init();
     rec3->originStationID = EMPTY;
-    rec3->stationName = strdup("Estação Fantasma");
+    rec3->stationName = strdup("Estacao Fantasma");
     rec3->stationNameLength = strlen(rec3->stationName);
     assert(DataBaseRepository_createRecord(db, rec3) == false);
     SubwayLineRecord_free(rec3);
@@ -52,16 +52,16 @@ int main() {
     struct SubwayLineRecord *recUpdate = SubwayLineRecord_init();
     recUpdate->rrn = rec1->rrn; // rrn interno, obtido do rec1
     recUpdate->originStationID = 1;
-    recUpdate->stationName = strdup("Estação Alterada");
+    recUpdate->stationName = strdup("Estacao Alterada");
     recUpdate->stationNameLength = strlen(recUpdate->stationName);
     assert(DataBaseRepository_updateRecord(db, recUpdate) == true);
 
     // Deve existir com novo nome
-    assert(DataBaseRepository_existRecord(db, "Estação Alterada") == true);
+    assert(DataBaseRepository_existRecord(db, "Estacao Alterada") == true);
 
     // Caso 6: Delete de registro
     assert(DataBaseRepository_deleteRecord(db, rec1->rrn) == true);
-    assert(DataBaseRepository_existRecord(db, "Estação Alterada") == false);
+    assert(DataBaseRepository_existRecord(db, "Estacao Alterada") == false);
 
     DataBaseRepository_close(db);
     printf("Todos os testes passaram!\n");
