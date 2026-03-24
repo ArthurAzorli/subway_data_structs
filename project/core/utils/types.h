@@ -2,6 +2,8 @@
 #define TYPES_H
 #include <stdint.h>
 
+#define EMPTY 0xFFFFFFFF
+
 #define true 1
 #define false 0
 

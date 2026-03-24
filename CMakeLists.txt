@@ -9,4 +9,5 @@ add_executable(Trabalho01
         project/domain/subway_line_record.h
         project/core/file/file_repository.c
         project/core/file/file_repository.h
-        project/tests/file_repository_test.c)
+        project/tests/file_repository_test.c
+        project/domain/subway_line_record.c)

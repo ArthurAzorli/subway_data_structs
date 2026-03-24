@@ -29,22 +29,22 @@ bool DataBaseRepository_isDataBaseValid(const struct DataBase *dataBase) {
 
 bool DataBaseRepository_isRecordValid(const struct SubwayLineRecord *record) {
     if (record == NULL) {
-        printf("ERROR: Ivalid Subway line record\n");
+        printf("ERROR: Invalid Subway line record\n");
         return false;
     }
     if (record->originStationID == EMPTY) {
-        printf("ERROR: Ivalid Subway line record (Origin Station ID is Empty)\n");
+        printf("ERROR: Invalid Subway line record (Origin Station ID is Empty)\n");
         return false;
     }
     if (record->stationName == NULL || record->stationNameLength == 0) {
-        printf("ERROR: Ivalid Subway line record (Station Name is Empty)\n");
+        printf("ERROR: Invalid Subway line record (Station Name is Empty)\n");
         return false;
     }
     return true;
 }
 
 size_t DataBaseRepository_getByteOffsetFromRRN(const size_t rrn) {
-    return HEADER_LENGTH + (RECORD_LENGTH * rrn);
+    return HEADER_LENGTH + RECORD_LENGTH * rrn;
 }
 
 bool DataBaseRepository_writeHeader(const struct DataBase *dataBase) {
@@ -70,11 +70,11 @@ bool DataBaseRepository_writeRecordData(const struct DataBase *dataBase, struct 
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->originStationID)) return false;
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->originLineID)) return false;
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->destinationStationID)) return false;
-    if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->destinationLineID)) return false;
+    if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->destinationDistant)) return false;
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->interactionLineID)) return false;
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, record->interactionStationID)) return false;
 
-    size_t remaining = RECORD_LENGTH - (10 * UINT32_BYTES_COUNT + 1);
+    size_t remaining = RECORD_LENGTH - (8 * UINT32_BYTES_COUNT + RECORD_STATUS_LENGTH);
     record->stationNameLength = remaining > record->stationNameLength ? record->stationNameLength : remaining;
     remaining -= record->stationNameLength;
     record->lineNameLength = remaining > record->lineNameLength ? record->lineNameLength : remaining;
@@ -107,7 +107,7 @@ bool DataBaseRepository_readRecordData(const struct DataBase *dataBase, struct S
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->originStationID)) return false;
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->originLineID)) return false;
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->destinationStationID)) return false;
-    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->destinationLineID)) return false;
+    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->destinationDistant)) return false;
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->interactionLineID)) return false;
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->interactionStationID)) return false;
 
@@ -117,22 +117,38 @@ bool DataBaseRepository_readRecordData(const struct DataBase *dataBase, struct S
         printf("ERROR: Failed to allocate record station name\n");
         return false;
     }
-
     if (!FileRepository_readString(dataBase->dataFile, record->stationNameLength, record->stationName)) return false;
-    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, (uint32_t *) &record->stationNameLength)) return false;
+
+    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, (uint32_t *) &record->lineNameLength)) return false;
     record->lineName = malloc(record->lineNameLength + 1);
     if (record->lineName == NULL) {
         printf("ERROR: Failed to allocate record line name\n");
         return false;
     }
+    if (!FileRepository_readString(dataBase->dataFile, record->lineNameLength, record->lineName)) return false;
     return true;
 }
 
-bool DataBaseRepository_affectsStationsPairs(struct DataBase *dataBase, struct SubwayLineRecord *record) {
-    //TODO: verify if has a new Statioins Pair
-    return false;
-}
 
+bool DataBaseRepository_affectsStationsPairs(const struct DataBase *dataBase, const struct SubwayLineRecord *record) {
+    if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
+    if (!DataBaseRepository_isRecordValid(record)) return false;
+    if (record->destinationStationID == EMPTY) return false;
+
+    size_t counter = 0;
+    for (size_t rrn = 0; rrn < dataBase->nextInsert; rrn++) {
+        struct SubwayLineRecord *other = DataBaseRepository_readRecord(dataBase, rrn);
+        if (other == NULL) continue;
+        if (DataBaseRepository_isRecordValid(other)) {
+            if (record->destinationStationID == other->originStationID || record->originStationID == other->
+                destinationStationID)
+                counter++;
+        }
+        SubwayLineRecord_free(other);
+    }
+
+    return counter == 2;
+}
 
 struct DataBase *DataBaseRepository_init(const String path) {
     struct DataFile *dataFile = FileRepository_openOrCreate(path);
@@ -147,22 +163,21 @@ struct DataBase *DataBaseRepository_init(const String path) {
         return NULL;
     }
     database->dataFile = dataFile;
+    database->lastRemoved = EMPTY;
+    database->nextInsert = 0;
+    database->stationsCount = 0;
+    database->pairStationsCount = 0;
+
     const size_t fileSize = FileRepository_fileSize(dataFile);
     if (fileSize < HEADER_LENGTH) {
-        database->lastRemoved = EMPTY;
-        database->nextInsert = 0;
-        database->stationsCount = 0;
-        database->pairStationsCount = 0;
         if (!DataBaseRepository_writeHeader(database)) {
             printf("ERROR: Failed to write to data header file\n");
-            FileRepository_close(dataFile);
-            free(database);
+            DataBaseRepository_close(database);
             return NULL;
         }
     } else if (!DataBaseRepository_readHeader(database)) {
         printf("ERROR: Failed to load to data header file\n");
-        FileRepository_close(dataFile);
-        free(database);
+        DataBaseRepository_close(database);
         return NULL;
     }
     return database;
@@ -172,13 +187,14 @@ bool DataBaseRepository_createRecord(struct DataBase *dataBase, struct SubwayLin
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     if (!DataBaseRepository_isRecordValid(record)) return false;
 
+    bool reuse = false;
     uint32_t rrn = dataBase->nextInsert;
     if (dataBase->lastRemoved != EMPTY) {
-        uint32_t nextRemoved;
-        if (!FileRepository_goTo(dataBase->dataFile, dataBase->nextInsert + 1)) return false;
-        if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &nextRemoved)) return false;
         rrn = dataBase->lastRemoved;
-        dataBase->lastRemoved = nextRemoved;
+        const size_t byteOffset =  DataBaseRepository_getByteOffsetFromRRN(rrn);
+        if (!FileRepository_goTo(dataBase->dataFile, byteOffset + 1)) return false;
+        if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &dataBase->lastRemoved)) return false;
+        reuse = true;
     }
 
     record->rrn = rrn;
@@ -188,9 +204,10 @@ bool DataBaseRepository_createRecord(struct DataBase *dataBase, struct SubwayLin
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, EMPTY)) return false;
     if (!DataBaseRepository_writeRecordData(dataBase, record)) return false;
 
-    dataBase->nextInsert++;
+    if (!reuse) dataBase->nextInsert++;
     dataBase->stationsCount++;
     if (DataBaseRepository_affectsStationsPairs(dataBase, record)) dataBase->pairStationsCount++;
+    if (!FileRepository_goTo(dataBase->dataFile, 1)) return false;
     if (!DataBaseRepository_writeHeader(dataBase)) return false;
     return FileRepository_flush(dataBase->dataFile);
 }
@@ -210,18 +227,91 @@ struct SubwayLineRecord *DataBaseRepository_readRecord(const struct DataBase *da
     if (isRemoved) return NULL;
 
 
-    struct SubwayLineRecord* record = malloc(sizeof(struct SubwayLineRecord));
-    if (record == NULL) {
-        printf("ERROR: Failed to allocate data record\n");
-        return NULL;
-    }
+    struct SubwayLineRecord *record = SubwayLineRecord_init();
+    if (record == NULL) return NULL;
+
     record->rrn = rrn;
     if (!DataBaseRepository_readRecordData(dataBase, record)) {
         printf("ERROR: Failed to read record data file\n");
         free(record);
         return NULL;
     }
+
     return record;
+}
+
+bool DataBaseRepository_updateRecord(struct DataBase *dataBase, struct SubwayLineRecord *record) {
+    if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
+    if (!DataBaseRepository_isRecordValid(record)) return false;
+    if (record->rrn >= dataBase->nextInsert) {
+        printf("ERROR: RRN %zu is out of bounds\n", record->rrn);
+        return false;
+    }
+
+    struct SubwayLineRecord *oldRecord = DataBaseRepository_readRecord(dataBase, record->rrn);
+    if (oldRecord == NULL) return false;
+
+    bool changeHeader = false;
+    if ((oldRecord->originStationID != record->originStationID || oldRecord->destinationStationID != record->
+         destinationStationID) && DataBaseRepository_affectsStationsPairs(dataBase, record)) {
+        if (oldRecord->destinationStationID == EMPTY) {
+            dataBase->pairStationsCount++;
+            changeHeader = true;
+        } else if (record->destinationStationID == EMPTY) {
+            dataBase->pairStationsCount--;
+            changeHeader = true;
+        }
+    }
+
+    bool changeRecord = false;
+    if (oldRecord->originStationID != record->originStationID) changeRecord = true;
+    if (oldRecord->originLineID != record->originLineID) changeRecord = true;
+    if (oldRecord->destinationStationID != record->destinationStationID) changeRecord = true;
+    if (oldRecord->destinationDistant != record->destinationDistant) changeRecord = true;
+    if (oldRecord->interactionStationID != record->interactionStationID) changeRecord = true;
+    if (oldRecord->interactionLineID != record->interactionLineID) changeRecord = true;
+    if (oldRecord->stationNameLength != record->stationNameLength) changeRecord = true;
+    if (oldRecord->lineNameLength != record->lineNameLength) changeRecord = true;
+    oldRecord->stationName[oldRecord->stationNameLength] = '\0';
+    oldRecord->lineName[oldRecord->lineNameLength] = '\0';
+    if (strcmp(oldRecord->stationName, record->stationName) != 0) changeRecord = true;
+    if (strcmp(oldRecord->lineName, record->lineName) != 0) changeRecord = true;
+
+    if (!changeRecord) {
+        SubwayLineRecord_free(oldRecord);
+        SubwayLineRecord_free(record);
+        return false;
+    }
+
+    if (changeHeader) {
+        if (!FileRepository_goTo(dataBase->dataFile, 1)) {
+            SubwayLineRecord_free(oldRecord);
+            SubwayLineRecord_free(record);
+            return false;
+        }
+
+        if (!DataBaseRepository_writeHeader(dataBase)) {
+            SubwayLineRecord_free(oldRecord);
+            SubwayLineRecord_free(record);
+            return false;
+        }
+    }
+
+    const size_t byteOffset = DataBaseRepository_getByteOffsetFromRRN(record->rrn);
+    if (!FileRepository_goTo(dataBase->dataFile, byteOffset + RECORD_STATUS_LENGTH)) {
+        SubwayLineRecord_free(oldRecord);
+        SubwayLineRecord_free(record);
+        return false;
+    }
+    if (!DataBaseRepository_writeRecordData(dataBase, record)) {
+        SubwayLineRecord_free(oldRecord);
+        SubwayLineRecord_free(record);
+        return false;
+    }
+
+    SubwayLineRecord_free(oldRecord);
+    SubwayLineRecord_free(record);
+    return FileRepository_flush(dataBase->dataFile);
 }
 
 bool DataBaseRepository_deleteRecord(struct DataBase *dataBase, const size_t rrn) {
@@ -242,27 +332,35 @@ bool DataBaseRepository_deleteRecord(struct DataBase *dataBase, const size_t rrn
     isRemoved = true;
     if (!FileRepository_writeBool(dataBase->dataFile, isRemoved)) return false;
     if (!FileRepository_writeInt(dataBase->dataFile, BIG_ENDIAN, dataBase->lastRemoved)) return false;
-    struct SubwayLineRecord record;
-    if (!DataBaseRepository_readRecordData(dataBase, &record))return false;
+    struct SubwayLineRecord *record = SubwayLineRecord_init();
+    if (!DataBaseRepository_readRecordData(dataBase, record))return false;
 
     dataBase->lastRemoved = rrn;
     dataBase->stationsCount--;
-    if (DataBaseRepository_affectsStationsPairs(dataBase, &record)) dataBase->pairStationsCount--;
+    if (DataBaseRepository_affectsStationsPairs(dataBase, record)) dataBase->pairStationsCount--;
+    if (!FileRepository_goTo(dataBase->dataFile, 1)) return false;
     if (!DataBaseRepository_writeHeader(dataBase)) return false;
+    SubwayLineRecord_free(record);
     return FileRepository_flush(dataBase->dataFile);
 }
 
-bool DataBaseRepository_existRecord(const struct DataBase* dataBase, const String stationName) {
+bool DataBaseRepository_existRecord(const struct DataBase *dataBase, const String stationName) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
 
     for (size_t rrn = 0; rrn < dataBase->nextInsert; rrn++) {
-        struct SubwayLineRecord* record = DataBaseRepository_readRecord(dataBase, rrn);
-        if (record == NULL || record->stationName == NULL) continue;
-        if (strcmp(record->stationName, stationName) == 0) {
-            free(record);
+        struct SubwayLineRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
+        if (record == NULL) continue;
+        if (record->stationName != NULL && strcmp(record->stationName, stationName) == 0) {
+            SubwayLineRecord_free(record);
             return true;
         }
-        free(record);
+        SubwayLineRecord_free(record);
     }
     return false;
+}
+
+void DataBaseRepository_close(struct DataBase *dataBase) {
+    if (dataBase == NULL) return;
+    if (dataBase->dataFile != NULL) FileRepository_close(dataBase->dataFile);
+    free(dataBase);
 }

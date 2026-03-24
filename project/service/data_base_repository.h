@@ -4,8 +4,6 @@
 #include "../core/utils/types.h"
 #include "../domain/subway_line_record.h"
 
-#define EMPTY 0xFFFFFFFF
-
 struct DataBase;
 
 struct DataBase *DataBaseRepository_init(String path);
