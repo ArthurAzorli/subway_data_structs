@@ -110,7 +110,7 @@ bool DataBaseRepository_readRecordData(const struct DataBase *dataBase, struct S
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->interactionLineID)) return false;
     if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->interactionStationID)) return false;
 
-    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, (uint32_t *) &record->stationNameLength)) return false;
+    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->stationNameLength)) return false;
     record->stationName = malloc(record->stationNameLength + 1);
     if (record->stationName == NULL) {
         printf("ERROR: Failed to allocate record station name\n");
@@ -121,7 +121,7 @@ bool DataBaseRepository_readRecordData(const struct DataBase *dataBase, struct S
     }
     record->stationName[record->stationNameLength] = '\0';
 
-    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, (uint32_t *) &record->lineNameLength)) return false;
+    if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &record->lineNameLength)) return false;
     record->lineName = malloc(record->lineNameLength + 1);
     if (record->lineName == NULL) {
         printf("ERROR: Failed to allocate record line name\n");
@@ -196,7 +196,7 @@ bool DataBaseRepository_createRecord(struct DataBase *dataBase, struct SubwayLin
     uint32_t rrn = dataBase->nextInsert;
     if (dataBase->lastRemoved != EMPTY) {
         rrn = dataBase->lastRemoved;
-        const size_t byteOffset =  DataBaseRepository_getByteOffsetFromRRN(rrn);
+        const size_t byteOffset = DataBaseRepository_getByteOffsetFromRRN(rrn);
         if (!FileRepository_goTo(dataBase->dataFile, byteOffset + 1)) return false;
         if (!FileRepository_readInt(dataBase->dataFile, BIG_ENDIAN, &dataBase->lastRemoved)) return false;
         reuse = true;
@@ -277,11 +277,8 @@ bool DataBaseRepository_updateRecord(struct DataBase *dataBase, struct SubwayLin
     if (oldRecord->interactionLineID != record->interactionLineID) changeRecord = true;
     if (oldRecord->stationNameLength != record->stationNameLength) changeRecord = true;
     if (oldRecord->lineNameLength != record->lineNameLength) changeRecord = true;
-    if (oldRecord->stationName != NULL && record->stationName != NULL) {
-        if (strcmp(oldRecord->stationName, record->stationName) != 0) changeRecord = true;
-    } else if (oldRecord->stationName != record->stationName) {
-        changeRecord = true;
-    }
+    if (strcmp(oldRecord->stationName, record->stationName) != 0) changeRecord = true;
+
     if (oldRecord->lineName != NULL && record->lineName != NULL) {
         if (strcmp(oldRecord->lineName, record->lineName) != 0) changeRecord = true;
     } else if (oldRecord->lineName != record->lineName) {
@@ -290,20 +287,17 @@ bool DataBaseRepository_updateRecord(struct DataBase *dataBase, struct SubwayLin
 
     if (!changeRecord) {
         SubwayLineRecord_free(oldRecord);
-        SubwayLineRecord_free(record);
         return false;
     }
 
     if (changeHeader) {
         if (!FileRepository_goTo(dataBase->dataFile, 1)) {
             SubwayLineRecord_free(oldRecord);
-            SubwayLineRecord_free(record);
             return false;
         }
 
         if (!DataBaseRepository_writeHeader(dataBase)) {
             SubwayLineRecord_free(oldRecord);
-            SubwayLineRecord_free(record);
             return false;
         }
     }
@@ -311,17 +305,14 @@ bool DataBaseRepository_updateRecord(struct DataBase *dataBase, struct SubwayLin
     const size_t byteOffset = DataBaseRepository_getByteOffsetFromRRN(record->rrn);
     if (!FileRepository_goTo(dataBase->dataFile, byteOffset + RECORD_STATUS_LENGTH)) {
         SubwayLineRecord_free(oldRecord);
-        SubwayLineRecord_free(record);
         return false;
     }
     if (!DataBaseRepository_writeRecordData(dataBase, record)) {
         SubwayLineRecord_free(oldRecord);
-        SubwayLineRecord_free(record);
         return false;
     }
 
     SubwayLineRecord_free(oldRecord);
-    SubwayLineRecord_free(record);
     return FileRepository_flush(dataBase->dataFile);
 }
 
