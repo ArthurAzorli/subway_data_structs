@@ -11,9 +11,9 @@ struct SubwayLineRecord {
     uint32_t destinationDistant;
     uint32_t interactionStationID;
     uint32_t interactionLineID;
-    size_t stationNameLength;
+    uint32_t stationNameLength;
     char *stationName;
-    size_t lineNameLength;
+    uint32_t lineNameLength;
     char *lineName;
 };
 

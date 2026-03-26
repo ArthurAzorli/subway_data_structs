@@ -236,6 +236,7 @@ struct SubwayLineRecord *DataBaseRepository_readRecord(const struct DataBase *da
     if (record == NULL) return NULL;
 
     record->rrn = rrn;
+    if (!FileRepository_move(dataBase->dataFile, UINT32_BYTES_COUNT)) return NULL;
     if (!DataBaseRepository_readRecordData(dataBase, record)) {
         printf("ERROR: Failed to read record data file\n");
         free(record);
