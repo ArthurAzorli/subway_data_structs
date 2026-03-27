@@ -1,11 +1,11 @@
-#include "subway_line_record.h"
+#include "subway_record.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "../core/utils/types.h"
 
-struct SubwayLineRecord * SubwayLineRecord_init() {
-    struct SubwayLineRecord* record = malloc(sizeof(struct SubwayLineRecord));
+struct SubwayRecord * SubwayRecord_init() {
+    struct SubwayRecord* record = malloc(sizeof(struct SubwayRecord));
     if (record == NULL) {
         printf("ERROR: Failed to allocate data record\n");
         return NULL;
@@ -24,7 +24,7 @@ struct SubwayLineRecord * SubwayLineRecord_init() {
     return record;
 }
 
-void SubwayLineRecord_free(struct SubwayLineRecord *record) {
+void SubwayRecord_free(struct SubwayRecord *record) {
     if (record == NULL) return;
     if (record->stationName != NULL) free(record->stationName);
     if (record->lineName != NULL) free(record->lineName);

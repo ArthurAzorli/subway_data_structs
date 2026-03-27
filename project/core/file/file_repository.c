@@ -10,8 +10,27 @@ struct DataFile {
     FILE *file;
     bool editMode;
     size_t size;
-    size_t byteOffset;
+    long byteOffset;
 };
+
+bool FileRepository_isDataFileValid(const struct DataFile *dataFile) {
+    if (dataFile == NULL || dataFile->file == NULL) {
+        printf("ERROR: Invalid File\n");
+        return false;
+    }
+    return true;
+}
+
+bool FileRepository_goToAbsolute(struct DataFile *dataFile, const long byteOffset) {
+    if (!FileRepository_isDataFileValid(dataFile)) return false;
+    if (byteOffset == dataFile->byteOffset) return true;
+    if (fseek(dataFile->file, byteOffset, SEEK_SET) != 0) {
+        printf("ERROR: Failed to reposition cursor\n");
+        return false;
+    }
+    dataFile->byteOffset = byteOffset;
+    return true;
+}
 
 struct DataFile *FileRepository_openOrCreate(const String path) {
     struct DataFile *dataFile = malloc(sizeof(struct DataFile));
@@ -69,16 +88,8 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
         free(dataFile);
         return NULL;
     }
-    FileRepository_goTo(dataFile, 1);
+    FileRepository_goToAbsolute(dataFile, 1);
     return dataFile;
-}
-
-bool FileRepository_isDataFileValid(const struct DataFile *dataFile) {
-    if (dataFile == NULL || dataFile->file == NULL) {
-        printf("ERROR: Invalid File\n");
-        return false;
-    }
-    return true;
 }
 
 bool FileRepository_read(struct DataFile *dataFile, const size_t bytesCount, void *buffer) {
@@ -87,13 +98,13 @@ bool FileRepository_read(struct DataFile *dataFile, const size_t bytesCount, voi
         printf("ERROR: Invalid ByteOffset access\n");
         return false;
     }
-    if (dataFile->byteOffset == 0 && !FileRepository_goTo(dataFile, 1)) {
+    if (dataFile->byteOffset == 0 && !FileRepository_goToAbsolute(dataFile, 1)) {
         printf("ERROR: Failed to go to data byte offset\n");
         return false;
     }
 
     const size_t count = fread(buffer, UINT8_BYTES_COUNT, bytesCount, dataFile->file);
-    dataFile->byteOffset += count;
+    dataFile->byteOffset += (long) count;
     return count == bytesCount;
 }
 
@@ -110,7 +121,7 @@ bool FileRepository_write(struct DataFile *dataFile, const size_t bytesCount,
     dataFile->size = dataFile->size > byteOffsetFinal ? dataFile->size : byteOffsetFinal;
 
     if (!dataFile->editMode) {
-        if (!FileRepository_goTo(dataFile, 0)) {
+        if (!FileRepository_goToAbsolute(dataFile, 0)) {
             printf("ERROR: Failed go to byte offset of consistent mark file\n");
             return false;
         }
@@ -122,26 +133,26 @@ bool FileRepository_write(struct DataFile *dataFile, const size_t bytesCount,
         dataFile->editMode = true;
     }
 
-    if (dataFile->byteOffset == 0 && !FileRepository_goTo(dataFile, 1)) {
+    if (dataFile->byteOffset == 0 && !FileRepository_goToAbsolute(dataFile, 1)) {
         printf("ERROR: Failed to go to data byte offset\n");
         return false;
     }
 
     const size_t count = fwrite(buffer, UINT8_BYTES_COUNT, bytesCount, dataFile->file);
-    dataFile->byteOffset += count;
+    dataFile->byteOffset += (long) count;
     return count == bytesCount;
 }
 
 size_t FileRepository_fileSize(const struct DataFile *dataFile) {
     if (!FileRepository_isDataFileValid(dataFile)) return 0;
-    return dataFile->size;
+    return dataFile->size == 0 ? 0 : dataFile->size - 1;
 }
 
 bool FileRepository_move(struct DataFile *dataFile, const long movement) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
     if (movement == 0) return true;
-    const long byteOffsetFinal = (long)dataFile->byteOffset + movement;
-    if (byteOffsetFinal > dataFile->size || byteOffsetFinal < 0) {
+    const long byteOffsetFinal = dataFile->byteOffset + movement;
+    if (byteOffsetFinal > dataFile->size || byteOffsetFinal < 1) {
         printf("ERROR: Invalid ByteOffset access\n");
         return false;
     }
@@ -153,19 +164,13 @@ bool FileRepository_move(struct DataFile *dataFile, const long movement) {
     return true;
 }
 
-bool FileRepository_goTo(struct DataFile *dataFile, const size_t byteOffset) {
+bool FileRepository_moveUntil(struct DataFile *dataFile, const long byteOffset) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
-    if (byteOffset > dataFile->size) {
-        printf("ERROR: Invalid ByteOffset access\n");
-        return false;
-    }
-    if (byteOffset == dataFile->byteOffset) return true;
-    if (fseek(dataFile->file, (long) byteOffset, SEEK_SET) != 0) {
-        printf("ERROR: Failed to reposition cursor\n");
-        return false;
-    }
-    dataFile->byteOffset = byteOffset;
-    return true;
+    const long movement = (byteOffset + 1) - dataFile->byteOffset;
+    return FileRepository_move(dataFile, movement);
+}
+bool FileRepository_goTo(struct DataFile *dataFile, const long byteOffset) {
+    return FileRepository_goToAbsolute(dataFile, byteOffset + 1);
 }
 
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result) {
@@ -191,8 +196,7 @@ bool FileRepository_readInt(struct DataFile *dataFile, const Endianness endianne
     return true;
 }
 
-bool FileRepository_readString(struct DataFile *dataFile, const size_t length,
-                               char *result) {
+bool FileRepository_readString(struct DataFile *dataFile, const size_t length, char *result) {
     if (!FileRepository_read(dataFile, length, result)) return false;
     result[length] = '\0';
     return true;
@@ -229,7 +233,7 @@ bool FileRepository_writeString(struct DataFile *dataFile, const size_t length,
 
 bool FileRepository_flush(struct DataFile *dataFile) {
     if (!dataFile->editMode) return true;
-    if (!FileRepository_goTo(dataFile, 0)) return false;
+    if (!FileRepository_goToAbsolute(dataFile, 0)) return false;
     const bool consistent = true;
     const size_t count = fwrite(&consistent, UINT8_BYTES_COUNT, 1, dataFile->file);
     if (count != UINT8_BYTES_COUNT) {
@@ -237,7 +241,7 @@ bool FileRepository_flush(struct DataFile *dataFile) {
         return false;
     }
     dataFile->editMode = false;
-    if (!FileRepository_goTo(dataFile, 1)) return false;
+    if (!FileRepository_goToAbsolute(dataFile, 1)) return false;
     return true;
 }
 

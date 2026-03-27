@@ -22,7 +22,9 @@ size_t FileRepository_fileSize(const struct DataFile *dataFile);
 
 bool FileRepository_move(struct DataFile *dataFile, long movement);
 
-bool FileRepository_goTo(struct DataFile *dataFile, size_t byteOffset);
+bool FileRepository_moveUntil(struct DataFile *dataFile, long byteOffset);
+
+bool FileRepository_goTo(struct DataFile *dataFile, long byteOffset);
 
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result);
 

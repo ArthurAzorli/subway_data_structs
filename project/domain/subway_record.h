@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct SubwayLineRecord {
+struct SubwayRecord {
     size_t rrn;
     uint32_t originStationID;
     uint32_t originLineID;
@@ -11,14 +11,14 @@ struct SubwayLineRecord {
     uint32_t destinationDistant;
     uint32_t interactionStationID;
     uint32_t interactionLineID;
-    size_t stationNameLength;
+    uint32_t stationNameLength;
     char *stationName;
-    size_t lineNameLength;
+    uint32_t lineNameLength;
     char *lineName;
 };
 
-struct SubwayLineRecord *SubwayLineRecord_init();
+struct SubwayRecord *SubwayRecord_init();
 
-void SubwayLineRecord_free(struct SubwayLineRecord *record);
+void SubwayRecord_free(struct SubwayRecord *record);
 
 #endif //SUBWAY_LINE_RECORD_H
