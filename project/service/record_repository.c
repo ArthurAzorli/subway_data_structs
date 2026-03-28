@@ -2,17 +2,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "../core/file/file_repository.h"
 
 #define TRASH 0x24
 #define RECORD_LENGTH 80
-#define HEADER_LENGTH 16
+#define RECORD_SECTION_OFFSET 16
 #define RECORD_STATUS_LENGTH 5
 
 long RecordRepository_getByteOffsetFromRRN(const uint32_t rrn) {
-    return HEADER_LENGTH + RECORD_LENGTH * rrn;
+    return RECORD_SECTION_OFFSET + RECORD_LENGTH * rrn;
 }
 
 bool RecordRepository_readString(struct DataFile *dataFile, uint32_t *length, char **result) {
