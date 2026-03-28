@@ -12,7 +12,6 @@ void file_repository_test() {
 
     // 2. Escrita de valores e verificação de tamanho
     assert(FileRepository_writeBool(df, true));
-    printf("File size after writing bool: %zu\n", FileRepository_fileSize(df));
     assert(FileRepository_fileSize(df) == 1);
 
     assert(FileRepository_writeBool(df, false));
