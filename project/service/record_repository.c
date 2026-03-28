@@ -17,7 +17,7 @@ long RecordRepository_getByteOffsetFromRRN(const uint32_t rrn) {
 
 bool RecordRepository_readString(struct DataFile *dataFile, uint32_t *length, char **result) {
     if (dataFile == NULL || length == NULL) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, length)) return false;
+    if (!FileRepository_readInt(dataFile, length)) return false;
     *result = malloc(*length + 1);
     if (*result == NULL) {
         free(*result);
@@ -33,7 +33,7 @@ bool RecordRepository_writeString(struct DataFile *dataFile, size_t *remaining, 
         *length = *remaining;
     }
 
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, *length)) return false;
+    if (!FileRepository_writeInt(dataFile, *length)) return false;
     if (!FileRepository_writeString(dataFile, *length, string)) return false;
     *remaining -= *length;
     return true;
@@ -41,12 +41,12 @@ bool RecordRepository_writeString(struct DataFile *dataFile, size_t *remaining, 
 
 bool RecordRepository_readRecordData(struct DataFile *dataFile, struct SubwayRecord *record) {
     if (record == NULL) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, &record->originStationID)) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, &record->originLineID)) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, &record->destinationStationID)) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, &record->destinationDistant)) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, &record->interactionLineID)) return false;
-    if (!FileRepository_readInt(dataFile, BIG_ENDIAN, &record->interactionStationID)) return false;
+    if (!FileRepository_readInt(dataFile, &record->originStationID)) return false;
+    if (!FileRepository_readInt(dataFile, &record->originLineID)) return false;
+    if (!FileRepository_readInt(dataFile, &record->destinationStationID)) return false;
+    if (!FileRepository_readInt(dataFile, &record->destinationDistant)) return false;
+    if (!FileRepository_readInt(dataFile, &record->interactionLineID)) return false;
+    if (!FileRepository_readInt(dataFile, &record->interactionStationID)) return false;
     if (!RecordRepository_readString(dataFile, &record->stationNameLength, &record->stationName)) return false;
     if (!RecordRepository_readString(dataFile, &record->lineNameLength, &record->lineName)) return false;
     return true;
@@ -54,12 +54,12 @@ bool RecordRepository_readRecordData(struct DataFile *dataFile, struct SubwayRec
 
 bool RecordRepository_writeRecordData(struct DataFile *dataFile, struct SubwayRecord *record) {
     if (dataFile == NULL || record == NULL) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, record->originStationID)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, record->originLineID)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, record->destinationStationID)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, record->destinationDistant)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, record->interactionLineID)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, record->interactionStationID)) return false;
+    if (!FileRepository_writeInt(dataFile, record->originStationID)) return false;
+    if (!FileRepository_writeInt(dataFile, record->originLineID)) return false;
+    if (!FileRepository_writeInt(dataFile, record->destinationStationID)) return false;
+    if (!FileRepository_writeInt(dataFile, record->destinationDistant)) return false;
+    if (!FileRepository_writeInt(dataFile, record->interactionLineID)) return false;
+    if (!FileRepository_writeInt(dataFile, record->interactionStationID)) return false;
     size_t remaining = RECORD_LENGTH - 8 * UINT32_BYTES_COUNT;
     if (!RecordRepository_writeString(dataFile, &remaining, &record->stationNameLength, record->stationName)) {
         return false;
@@ -87,7 +87,9 @@ bool RecordRepository_isRemoved(struct DataFile *dataFile, const uint32_t rrn, b
     if (dataFile == NULL) return false;
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_goTo(dataFile, offset)) return false;
-    return FileRepository_readBool(dataFile, removed);
+    if (!FileRepository_readBool(dataFile, removed)) return false;
+    printf("DEBUG: Record RRN %u is %d\n", rrn, *removed);
+    return true;
 }
 
 bool RecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t rrn, uint32_t* lastRemoved) {
@@ -95,12 +97,14 @@ bool RecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t rrn
 
     bool removed;
     if (!RecordRepository_isRemoved(dataFile, rrn, &removed)) return false;
+    printf("DEBUG: Removing record RRN %u, last removed was %u\n", rrn, *lastRemoved);
+    printf("DEBUG: Record RRN %u is %s\n", rrn, removed ? "already removed" : "active");
     if (removed) return true;
 
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_moveUntil(dataFile, offset)) return false;
     if (!FileRepository_writeBool( dataFile, true)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, *lastRemoved)) return false;
+    if (!FileRepository_writeInt(dataFile, *lastRemoved)) return false;
     *lastRemoved = rrn;
     return true;
 }
@@ -113,7 +117,7 @@ bool RecordRepository_readLastRemoved(struct DataFile *dataFile, const uint32_t 
 
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_moveUntil(dataFile, offset + UINT8_BYTES_COUNT)) return false;
-    return FileRepository_readInt(dataFile, BIG_ENDIAN, lastRemoved);
+    return FileRepository_readInt(dataFile, lastRemoved);
 }
 
 struct SubwayRecord *RecordRepository_readRecord(struct DataFile *dataFile, const uint32_t rrn) {
@@ -152,7 +156,7 @@ bool RecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord
     if (!FileRepository_goTo(dataFile, offset)) return false;
 
     if (!FileRepository_writeBool(dataFile, false)) return false;
-    if (!FileRepository_writeInt(dataFile, BIG_ENDIAN, EMPTY)) return false;
+    if (!FileRepository_writeInt(dataFile, EMPTY)) return false;
     if (!RecordRepository_writeRecordData(dataFile, record)) return false;
 
     return true;

@@ -16,10 +16,10 @@ void record_repository_test() {
     struct DataFile *df = FileRepository_openOrCreate(path);
     assert(df != NULL);
 
-    FileRepository_writeInt(df, BIG_ENDIAN, -1);
-    FileRepository_writeInt(df, BIG_ENDIAN, -1);
-    FileRepository_writeInt(df, BIG_ENDIAN, -1);
-    FileRepository_writeInt(df, BIG_ENDIAN, -1);
+    FileRepository_writeInt(df, -1);
+    FileRepository_writeInt(df, -1);
+    FileRepository_writeInt(df, -1);
+    FileRepository_writeInt(df, -1);
 
     // ========================
     // CRIA RECORDS

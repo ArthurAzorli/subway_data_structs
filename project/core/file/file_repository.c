@@ -92,8 +92,9 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
     return dataFile;
 }
 
-bool FileRepository_read(struct DataFile *dataFile, const size_t bytesCount, void *buffer) {
+bool FileRepository_read(struct DataFile *dataFile,  const size_t elementSize, const size_t count, void *buffer) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
+    const size_t bytesCount = elementSize * count;
     if (dataFile->byteOffset + bytesCount > dataFile->size) {
         printf("ERROR: Invalid ByteOffset access\n");
         return false;
@@ -102,14 +103,12 @@ bool FileRepository_read(struct DataFile *dataFile, const size_t bytesCount, voi
         printf("ERROR: Failed to go to data byte offset\n");
         return false;
     }
-
-    const size_t count = fread(buffer, UINT8_BYTES_COUNT, bytesCount, dataFile->file);
-    dataFile->byteOffset += (long) count;
-    return count == bytesCount;
+    const size_t readCount = fread(buffer, elementSize, count, dataFile->file);
+    dataFile->byteOffset += (long) bytesCount;
+    return readCount == count;
 }
 
-bool FileRepository_write(struct DataFile *dataFile, const size_t bytesCount,
-                          const void *buffer) {
+bool FileRepository_write(struct DataFile *dataFile, const size_t elementSize, const size_t count, const void *buffer) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
 
     if (buffer == NULL) {
@@ -117,6 +116,7 @@ bool FileRepository_write(struct DataFile *dataFile, const size_t bytesCount,
         return false;
     }
 
+    const size_t bytesCount = elementSize * count;
     const size_t byteOffsetFinal = dataFile->byteOffset + bytesCount;
     dataFile->size = dataFile->size > byteOffsetFinal ? dataFile->size : byteOffsetFinal;
 
@@ -138,9 +138,9 @@ bool FileRepository_write(struct DataFile *dataFile, const size_t bytesCount,
         return false;
     }
 
-    const size_t count = fwrite(buffer, UINT8_BYTES_COUNT, bytesCount, dataFile->file);
-    dataFile->byteOffset += (long) count;
-    return count == bytesCount;
+    const size_t writeCount = fwrite(buffer, elementSize, count, dataFile->file);
+    dataFile->byteOffset += (long) bytesCount;
+    return writeCount == count;
 }
 
 size_t FileRepository_fileSize(const struct DataFile *dataFile) {
@@ -169,57 +169,44 @@ bool FileRepository_moveUntil(struct DataFile *dataFile, const long byteOffset) 
     const long movement = (byteOffset + 1) - dataFile->byteOffset;
     return FileRepository_move(dataFile, movement);
 }
+
 bool FileRepository_goTo(struct DataFile *dataFile, const long byteOffset) {
     return FileRepository_goToAbsolute(dataFile, byteOffset + 1);
 }
 
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result) {
-    uint8_t buffer;
-    if (!FileRepository_read(dataFile, UINT8_BYTES_COUNT, &buffer)) return false;
-    *result = buffer != 0;
+    printf("ESTOU LENDO UM BOOL NA POSICAO: %d %d\n", dataFile->byteOffset, ftell(dataFile->file));
+    if (!FileRepository_read(dataFile, UINT8_BYTES_COUNT, 1, result)) return false;
+    printf("RESULTADO: %d\n", *result);
     return true;
 }
 
 bool FileRepository_readByte(struct DataFile *dataFile, uint8_t *result) {
-    return FileRepository_read(dataFile, UINT8_BYTES_COUNT, result);
+    return FileRepository_read(dataFile, UINT8_BYTES_COUNT, 1, result);
 }
 
-bool FileRepository_readInt(struct DataFile *dataFile, const Endianness endianness, uint32_t *result) {
-    *result = 0;
-    uint8_t buffer[UINT32_BYTES_COUNT];
-    if (!FileRepository_read(dataFile, UINT32_BYTES_COUNT, buffer)) return false;
-    for (size_t i = 0; i < UINT32_BYTES_COUNT; i++) {
-        const uint8_t byte = buffer[i];
-        const size_t bitOffset = endianness == BIG_ENDIAN ? UINT32_BYTES_COUNT - 1 - i : i;
-        *result |= (byte & 0xFF) << (8 * bitOffset);
-    }
-    return true;
+bool FileRepository_readInt(struct DataFile *dataFile, uint32_t *result) {
+    return FileRepository_read(dataFile, UINT32_BYTES_COUNT, 1, result);
 }
 
 bool FileRepository_readString(struct DataFile *dataFile, const size_t length, char *result) {
-    if (!FileRepository_read(dataFile, length, result)) return false;
+    if (!FileRepository_read(dataFile, UINT8_BYTES_COUNT, length, result)) return false;
     result[length] = '\0';
     return true;
 }
 
 bool FileRepository_writeBool(struct DataFile *dataFile, const bool value) {
     const uint8_t byte = value != 0;
-    return FileRepository_write(dataFile, UINT8_BYTES_COUNT, &byte);
+    return FileRepository_write(dataFile, UINT8_BYTES_COUNT, 1, &byte);
 }
 
 bool FileRepository_writeByte(struct DataFile *dataFile, const uint8_t value) {
     const uint8_t byte = value & 0xFF;
-    return FileRepository_write(dataFile, UINT8_BYTES_COUNT, &byte);
+    return FileRepository_write(dataFile, UINT8_BYTES_COUNT, 1, &byte);
 }
 
-bool FileRepository_writeInt(struct DataFile *dataFile, const Endianness endianness, const uint32_t value) {
-    uint8_t buffer[UINT32_BYTES_COUNT];
-    for (size_t i = 0; i < UINT32_BYTES_COUNT; i++) {
-        const size_t bitOffset = endianness == BIG_ENDIAN ? UINT32_BYTES_COUNT - 1 - i : i;
-        const uint8_t byte = value >> (8 * bitOffset) & 0xFF;
-        buffer[i] = byte;
-    }
-    return FileRepository_write(dataFile, UINT32_BYTES_COUNT, buffer);
+bool FileRepository_writeInt(struct DataFile *dataFile, const uint32_t value) {
+    return FileRepository_write(dataFile, UINT32_BYTES_COUNT, 1, &value);
 }
 
 bool FileRepository_writeString(struct DataFile *dataFile, const size_t length,
@@ -228,7 +215,7 @@ bool FileRepository_writeString(struct DataFile *dataFile, const size_t length,
         printf("ERROR: Invalid String\n");
         return false;
     }
-    return FileRepository_write(dataFile, length, (const uint8_t *) value);
+    return FileRepository_write(dataFile, UINT8_BYTES_COUNT, length, value);
 }
 
 bool FileRepository_flush(struct DataFile *dataFile) {
