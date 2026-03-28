@@ -4,10 +4,12 @@
 #include "../core/file/file_repository.h"
 
 void file_repository_test() {
-   const char *testFile = "test_file_repository.bin";
+    const char *path = "test_file_repository.bin";
+
+    remove(path);
 
     // 1. Criação do arquivo
-    struct DataFile *df = FileRepository_openOrCreate(testFile);
+    struct DataFile *df = FileRepository_openOrCreate(path);
     assert(df != NULL);
 
     // 2. Escrita de valores e verificação de tamanho
@@ -40,7 +42,7 @@ void file_repository_test() {
     FileRepository_close(df);
 
     // 4. Reabrir arquivo
-    df = FileRepository_openOrCreate(testFile);
+    df = FileRepository_openOrCreate(path);
     assert(df != NULL);
 
     // 5. Leitura dos valores
@@ -84,7 +86,7 @@ void file_repository_test() {
 
     // 8. Fechar e remover arquivo
     FileRepository_close(df);
-    assert(remove(testFile) == 0);
+    assert(remove(path) == 0);
 
-    printf("Todos os testes passaram com sucesso!\n");
+    printf("FILE REPOSITORY: OK\n");
 }

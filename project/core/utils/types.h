@@ -7,7 +7,7 @@
 #define true 1
 #define false 0
 
-typedef uint16_t bool;
+typedef uint8_t bool;
 typedef const char* String;
 
 struct DateTime {

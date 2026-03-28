@@ -20,21 +20,29 @@ bool RecordRepository_readString(struct DataFile *dataFile, uint32_t *length, ch
     if (!FileRepository_readInt(dataFile, length)) return false;
     *result = malloc(*length + 1);
     if (*result == NULL) {
-        free(*result);
         printf("ERROR: Failed to allocate string\n");
         return false;
     }
-    return FileRepository_readString(dataFile, *length, *result);
+    if (*length > 0) {
+        if (!FileRepository_readString(dataFile, *length, *result)) {
+            free(*result);
+            return false;
+        }
+    }
+    (*result)[*length] = '\0';
+    return true;
 }
 
 bool RecordRepository_writeString(struct DataFile *dataFile, size_t *remaining, uint32_t *length, const char *string) {
-    if (dataFile == NULL || remaining == NULL || length == NULL || string == NULL) return false;
+    if (dataFile == NULL || remaining == NULL || length == NULL) return false;
     if (*remaining < *length) {
         *length = *remaining;
     }
 
     if (!FileRepository_writeInt(dataFile, *length)) return false;
-    if (!FileRepository_writeString(dataFile, *length, string)) return false;
+    if (*length > 0 && string != NULL) {
+        if (!FileRepository_writeString(dataFile, *length, string)) return false;
+    }
     *remaining -= *length;
     return true;
 }
@@ -88,7 +96,6 @@ bool RecordRepository_isRemoved(struct DataFile *dataFile, const uint32_t rrn, b
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_goTo(dataFile, offset)) return false;
     if (!FileRepository_readBool(dataFile, removed)) return false;
-    printf("DEBUG: Record RRN %u is %d\n", rrn, *removed);
     return true;
 }
 
@@ -97,8 +104,6 @@ bool RecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t rrn
 
     bool removed;
     if (!RecordRepository_isRemoved(dataFile, rrn, &removed)) return false;
-    printf("DEBUG: Removing record RRN %u, last removed was %u\n", rrn, *lastRemoved);
-    printf("DEBUG: Record RRN %u is %s\n", rrn, removed ? "already removed" : "active");
     if (removed) return true;
 
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
@@ -157,7 +162,10 @@ bool RecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord
 
     if (!FileRepository_writeBool(dataFile, false)) return false;
     if (!FileRepository_writeInt(dataFile, EMPTY)) return false;
-    if (!RecordRepository_writeRecordData(dataFile, record)) return false;
+    if (!RecordRepository_writeRecordData(dataFile, record)) {
+        printf("ERROR: Fail to write record data\n");
+        return false;
+    }
 
     return true;
 }
