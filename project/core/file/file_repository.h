@@ -37,7 +37,6 @@ bool FileRepository_writeInt(struct DataFile *dataFile, uint32_t value);
 
 bool FileRepository_writeString(struct DataFile *dataFile, size_t length, String value);
 
-//apenas marca o arquivo como consistente (deve ser chamado sempre que parar de escrever)
 bool FileRepository_flush(struct DataFile *dataFile);
 
 void FileRepository_close(struct DataFile *dataFile);
