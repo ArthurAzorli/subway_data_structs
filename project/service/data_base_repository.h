@@ -2,19 +2,22 @@
 #define DATA_BASE_REPOSITORY_H
 
 #include "../core/utils/types.h"
-#include "../domain/subway_line_record.h"
+#include "../domain/subway_record.h"
 
-struct DataBase;
+struct DataBase {
+    struct DataHeader *dataHeader;
+    struct DataFile *dataFile;
+};
 
 struct DataBase *DataBaseRepository_init(String path);
 
-bool DataBaseRepository_createRecord(struct DataBase* dataBase, struct SubwayLineRecord *record);
+bool DataBaseRepository_createRecord(const struct DataBase* dataBase, struct SubwayRecord *record);
 
-struct SubwayLineRecord *DataBaseRepository_readRecord(const struct DataBase* dataBase, size_t rrn);
+struct SubwayRecord *DataBaseRepository_readRecord(const struct DataBase* dataBase, size_t rrn);
 
-bool DataBaseRepository_updateRecord(struct DataBase* dataBase, struct SubwayLineRecord *record);
+bool DataBaseRepository_updateRecord(struct DataBase* dataBase, struct SubwayRecord *record);
 
-bool DataBaseRepository_deleteRecord(struct DataBase* dataBase, size_t rrn);
+bool DataBaseRepository_deleteRecord(const struct DataBase* dataBase, size_t rrn);
 
 bool DataBaseRepository_existRecord(const struct DataBase* dataBase, String stationName);
 
