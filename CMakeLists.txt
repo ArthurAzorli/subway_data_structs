@@ -4,6 +4,8 @@ project(Trabalho01 C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(Trabalho01
+        project/core/utils/types.h
+        project/core/utils/string.h
         project/core/file/file_repository.c
         project/core/file/file_repository.h
         project/domain/subway_record.h

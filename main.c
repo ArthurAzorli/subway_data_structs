@@ -2,8 +2,10 @@
 #include "project/tests/record_repository_test.c"
 #include "project/tests/header_repository_test.c"
 #include "project/tests/data_base_repository_test.c"
+#include "project/tests/string_test.c"
 
 int main() {
+   string_test();
    file_repository_test();
    record_repository_test();
    header_repository_test();
