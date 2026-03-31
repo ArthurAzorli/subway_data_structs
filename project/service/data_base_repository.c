@@ -193,7 +193,7 @@ bool DataBaseRepository_deleteRecord(const struct DataBase *dataBase, const size
 
     struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
     if (record == NULL) {
-        printf("ERROR: Failed to read record data file\n");
+        printf("ERROR: Record %zu already removed or invalid\n", rrn);
         return false;
     }
 

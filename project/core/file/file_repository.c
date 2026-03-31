@@ -213,7 +213,10 @@ bool FileRepository_goTo(struct DataFile *dataFile, const long byteOffset) {
 }
 
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result) {
-    return FileRepository_read(dataFile, UINT8_BYTES_COUNT, 1, result);
+    uint8_t byte;
+    if (!FileRepository_read(dataFile, UINT8_BYTES_COUNT, 1, &byte)) return false;
+    *result = byte ? true : false;
+    return true;
 }
 
 bool FileRepository_readByte(struct DataFile *dataFile, uint8_t *result) {

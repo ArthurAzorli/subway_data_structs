@@ -67,7 +67,7 @@ bool RecordRepository_writeRecordData(struct DataFile *dataFile, struct SubwayRe
     if (!FileRepository_writeInt(dataFile, record->destinationDistant)) return false;
     if (!FileRepository_writeInt(dataFile, record->interactionLineID)) return false;
     if (!FileRepository_writeInt(dataFile, record->interactionStationID)) return false;
-    size_t remaining = RECORD_LENGTH - 8 * UINT32_BYTES_COUNT;
+    size_t remaining = RECORD_LENGTH - (8 * UINT32_BYTES_COUNT) - RECORD_STATUS_LENGTH;
     if (!RecordRepository_writeString(dataFile, &remaining, &record->stationNameLength, record->stationName)) {
         return false;
     }
@@ -128,7 +128,6 @@ struct SubwayRecord *RecordRepository_readRecord(struct DataFile *dataFile, cons
     if (dataFile == NULL) return NULL;
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_goTo(dataFile, offset)) return NULL;
-
 
     bool removed;
     if (!RecordRepository_isRemoved(dataFile, rrn, &removed) || removed) return NULL;
