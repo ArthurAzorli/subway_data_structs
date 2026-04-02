@@ -10,6 +10,8 @@
 #include <string.h>
 #include <ctype.h>
 
+//Functions made available by the professor and course assistants for common use.
+
 void BinarioNaTela(char *arquivo);
 void ScanQuoteString(char *str);
 

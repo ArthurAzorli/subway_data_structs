@@ -8,7 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 
-void BinarioNaTela(char *arquivo) {
+void BinarioNaTela(const char *arquivo) {
     FILE *fs;
     if (arquivo == NULL || !(fs = fopen(arquivo, "rb"))) {
         fprintf(stderr,
@@ -20,7 +20,7 @@ void BinarioNaTela(char *arquivo) {
     }
 
     fseek(fs, 0, SEEK_END);
-    size_t fl = ftell(fs);
+    const size_t fl = ftell(fs);
 
     fseek(fs, 0, SEEK_SET);
     unsigned char *mb = (unsigned char *)malloc(fl);

@@ -17,5 +17,5 @@ add_executable(Trabalho01
         project/service/header_repository.c
         project/service/header_repository.h
         main.c
-        project/core/utils/provided.h
-        project/core/utils/provided.c)
+        project/lib/provided.h
+        project/lib/provided.c)
