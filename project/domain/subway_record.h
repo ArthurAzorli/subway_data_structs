@@ -2,6 +2,7 @@
 #define SUBWAY_LINE_RECORD_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 struct SubwayRecord {
     size_t rrn;

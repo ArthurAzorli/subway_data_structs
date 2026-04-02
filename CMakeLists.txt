@@ -16,4 +16,6 @@ add_executable(Trabalho01
         project/service/record_repository.h
         project/service/header_repository.c
         project/service/header_repository.h
-        main.c)
+        main.c
+        project/core/utils/provided.h
+        project/core/utils/provided.c)
