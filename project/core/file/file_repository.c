@@ -215,7 +215,7 @@ bool FileRepository_goTo(struct DataFile *dataFile, const long byteOffset) {
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result) {
     uint8_t byte;
     if (!FileRepository_read(dataFile, UINT8_BYTES_COUNT, 1, &byte)) return false;
-    *result = byte ? true : false;
+    *result = byte - '0' ? true : false;
     return true;
 }
 
@@ -234,7 +234,7 @@ bool FileRepository_readString(struct DataFile *dataFile, const size_t length, c
 }
 
 bool FileRepository_writeBool(struct DataFile *dataFile, const bool value) {
-    const uint8_t byte = value ? 1 : 0;
+    const uint8_t byte = (value ? 1 : 0) + '0';
     return FileRepository_write(dataFile, UINT8_BYTES_COUNT, 1, &byte);
 }
 
