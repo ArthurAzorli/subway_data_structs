@@ -27,7 +27,7 @@ void runTests() {
     database_repository_test();
     input_repository_test();
     printf("Finish tests\n");
-#    endif
+#endif
 #endif
 }
 
