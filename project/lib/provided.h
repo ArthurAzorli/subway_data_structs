@@ -13,6 +13,7 @@
 //Functions made available by the professor and course assistants for common use.
 
 void BinarioNaTela(const char *arquivo);
+
 void ScanQuoteString(char *str);
 
 #endif //TRABALHO01_PROVIDED_H

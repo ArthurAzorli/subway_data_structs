@@ -9,7 +9,7 @@
 #define false 0
 
 typedef uint8_t bool;
-typedef const char* String;
+typedef const char *String;
 
 struct DateTime {
     uint8_t hour;

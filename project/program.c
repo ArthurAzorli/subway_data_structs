@@ -9,7 +9,7 @@
 
 #define PATH_FILE_MAX_LENGTH 101
 
-void Program_requestInput(char* message) {
+void Program_requestInput(char *message) {
 #ifdef SHOW_INPUT_REQUEST
 #if SHOW_INPUT_REQUEST
     if (message != NULL) printf("%s\n", message);
@@ -17,7 +17,7 @@ void Program_requestInput(char* message) {
 #endif
 }
 
-bool Program_startSession(struct Session* session) {
+bool Program_startSession(struct Session *session) {
     if (session == NULL) {
         printf("ERROR: Failed to initialize session\n");
         return false;
@@ -61,6 +61,3 @@ bool Program_startSession(struct Session* session) {
     DataBaseRepository_close(dataBase);
     return true;
 }
-
-
-

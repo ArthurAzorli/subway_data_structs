@@ -20,16 +20,16 @@ bool DataBaseRepository_isRRNValid(const struct DataBase *dataBase, const size_t
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     return dataBase->dataHeader->nextInsert > rrn;
 }
-bool DataBaseRepository_updateHeaderCounts(
-        const struct DataBase *dataBase,
-        const struct SubwayRecord *oldRecord,
-        const struct SubwayRecord *newRecord) {
 
+bool DataBaseRepository_updateHeaderCounts(
+    const struct DataBase *dataBase,
+    const struct SubwayRecord *oldRecord,
+    const struct SubwayRecord *newRecord) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
 
     const bool nameChanged = strcmp(oldRecord->stationName, newRecord->stationName) != 0;
     const bool pairChanged = oldRecord->originStationID != newRecord->originStationID ||
-                       oldRecord->destinationStationID != newRecord->destinationStationID;
+                             oldRecord->destinationStationID != newRecord->destinationStationID;
 
     if (!nameChanged && !pairChanged) return true;
 
@@ -43,24 +43,24 @@ bool DataBaseRepository_updateHeaderCounts(
         if (record == NULL) continue;
 
 
-            if (record->stationNameLength == oldRecord->stationNameLength &&
-                memcmp(record->stationName, oldRecord->stationName, record->stationNameLength) == 0) {
-                oldStationCount++;
-                }
-            if (record->stationNameLength == newRecord->stationNameLength &&
-                memcmp(record->stationName, newRecord->stationName, record->stationNameLength) == 0) {
-                newStationCount++;
-                }
+        if (record->stationNameLength == oldRecord->stationNameLength &&
+            memcmp(record->stationName, oldRecord->stationName, record->stationNameLength) == 0) {
+            oldStationCount++;
+        }
+        if (record->stationNameLength == newRecord->stationNameLength &&
+            memcmp(record->stationName, newRecord->stationName, record->stationNameLength) == 0) {
+            newStationCount++;
+        }
 
 
         if (record->originStationID == oldRecord->originStationID &&
             record->destinationStationID == oldRecord->destinationStationID) {
             oldPairCount++;
-            }
+        }
         if (record->originStationID == newRecord->originStationID &&
             record->destinationStationID == newRecord->destinationStationID) {
             newPairCount++;
-            }
+        }
 
         SubwayRecord_free(record);
     }
@@ -93,7 +93,8 @@ bool DataBaseRepository_updateHeaderCounts(
     return changeCounts;
 }
 
-size_t DataBaseRepository_countStation(const struct DataBase *dataBase, const size_t stationNameLength, const String stationName) {
+size_t DataBaseRepository_countStation(const struct DataBase *dataBase, const size_t stationNameLength,
+                                       const String stationName) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return 0;
     if (stationName == NULL) {
         printf("ERROR: Invalid station name\n");
@@ -104,7 +105,8 @@ size_t DataBaseRepository_countStation(const struct DataBase *dataBase, const si
     for (size_t rrn = 0; rrn < dataBase->dataHeader->nextInsert; rrn++) {
         struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
         if (record == NULL || record->stationName == NULL) continue;
-        if (record->stationNameLength == stationNameLength && memcmp(record->stationName, stationName, stationNameLength) == 0) {
+        if (record->stationNameLength == stationNameLength && memcmp(record->stationName, stationName,
+                                                                     stationNameLength) == 0) {
             count++;
         }
         SubwayRecord_free(record);
@@ -122,7 +124,8 @@ size_t DatabaseRepository_countStationsPairs(const struct DataBase *dataBase, co
         if (other == NULL) continue;
 
         if (record->originStationID == other->originStationID &&
-            record->destinationStationID == other->destinationStationID) count++;
+            record->destinationStationID == other->destinationStationID)
+            count++;
         SubwayRecord_free(other);
     }
     return count;
@@ -178,8 +181,10 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
     }
 
     if (!reuse) dataBase->dataHeader->nextInsert++;
-    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 1) dataBase->dataHeader->stationsCount++;
-    if (record->destinationStationID != EMPTY && DatabaseRepository_countStationsPairs(dataBase, record) == 1) dataBase->dataHeader->pairStationsCount++;
+    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 1) dataBase->
+            dataHeader->stationsCount++;
+    if (record->destinationStationID != EMPTY && DatabaseRepository_countStationsPairs(dataBase, record) == 1) dataBase
+            ->dataHeader->pairStationsCount++;
 
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
         printf("ERROR: Failed to write to data header file\n");
@@ -257,7 +262,8 @@ bool DataBaseRepository_deleteRecord(const struct DataBase *dataBase, const size
         return false;
     }
 
-    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 0) dataBase->dataHeader->stationsCount--;
+    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 0) dataBase->
+            dataHeader->stationsCount--;
     if (DatabaseRepository_countStationsPairs(dataBase, record) == 0) dataBase->dataHeader->pairStationsCount--;
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
         printf("ERROR: Failed to write to data header file\n");

@@ -5,7 +5,7 @@
 #include "../service/database/header_repository.h"
 
 void database_repository_test() {
-    const char* path = "test_database_repository.bin";
+    const char *path = "test_database_repository.bin";
     remove(path);
 
     struct DataBase *db = DataBaseRepository_init(path);

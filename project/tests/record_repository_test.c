@@ -162,5 +162,4 @@ void record_repository_test() {
     SubwayRecord_free(r3);
 
     printf("RECORD_REPOSITORY: OK\n");
-
 }

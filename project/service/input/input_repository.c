@@ -25,10 +25,10 @@ uint32_t InputRepository_parseUInt(const String input) {
         printf("ERROR: Failed to parse unsigned integer %s\n", input);
         return EMPTY;
     }
-    return (uint32_t)value;
+    return (uint32_t) value;
 }
 
-struct InputFile * InputRepository_openFile(const String path) {
+struct InputFile *InputRepository_openFile(const String path) {
     if (path == NULL) {
         printf("ERROR: Invalid file path\n");
         return NULL;
@@ -49,7 +49,7 @@ struct InputFile * InputRepository_openFile(const String path) {
     return inputFile;
 }
 
-struct SubwayRecord * InputRepository_extractRecord(struct InputFile *inputFile) {
+struct SubwayRecord *InputRepository_extractRecord(struct InputFile *inputFile) {
     if (!InputRepository_isInputFileValid(inputFile)) {
         printf("ERROR: Input file is invalid\n");
         return NULL;
@@ -67,8 +67,10 @@ struct SubwayRecord * InputRepository_extractRecord(struct InputFile *inputFile)
     line[strcspn(line, "\r\n")] = 0;
     inputFile->line++;
 
-    char *stationID, *stationName, *lineID, *lineName, *destinationID, *distant, *interactionLineID, *interactionStationID;
-    split(line, FIELD_DELIMITER, &stationID,  &stationName, &lineID, &lineName, &destinationID, &distant, &interactionLineID, &interactionStationID);
+    char *stationID, *stationName, *lineID, *lineName, *destinationID, *distant, *interactionLineID, *
+            interactionStationID;
+    split(line, FIELD_DELIMITER, &stationID, &stationName, &lineID, &lineName, &destinationID, &distant,
+          &interactionLineID, &interactionStationID);
 
     struct SubwayRecord *record = SubwayRecord_init();
     if (record == NULL) {

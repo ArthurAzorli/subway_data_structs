@@ -6,8 +6,8 @@
 
 #include "../core/utils/types.h"
 
-struct SubwayRecord * SubwayRecord_init() {
-    struct SubwayRecord* record = malloc(sizeof(struct SubwayRecord));
+struct SubwayRecord *SubwayRecord_init() {
+    struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
     if (record == NULL) {
         printf("ERROR: Failed to allocate data record\n");
         return NULL;

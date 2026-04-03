@@ -5,8 +5,8 @@
 #include "../service/database/header_repository.h"
 
 void header_repository_test() {
-    const char* path =  "test_header_repository.bin";
-    
+    const char *path = "test_header_repository.bin";
+
     remove(path);
 
     // 1. Inicialização em arquivo vazio

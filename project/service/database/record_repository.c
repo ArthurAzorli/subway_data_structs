@@ -98,7 +98,7 @@ bool RecordRepository_isRemoved(struct DataFile *dataFile, const uint32_t rrn, b
     return true;
 }
 
-bool RecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t rrn, uint32_t* lastRemoved) {
+bool RecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t rrn, uint32_t *lastRemoved) {
     if (dataFile == NULL) return false;
 
     bool removed;
@@ -107,7 +107,7 @@ bool RecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t rrn
 
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_moveUntil(dataFile, offset)) return false;
-    if (!FileRepository_writeBool( dataFile, true)) return false;
+    if (!FileRepository_writeBool(dataFile, true)) return false;
     if (!FileRepository_writeInt(dataFile, *lastRemoved)) return false;
     *lastRemoved = rrn;
     return true;

@@ -50,7 +50,7 @@ void showMenu() {
 
 int main() {
     runTests();
-    struct Session* session = Session_init();
+    struct Session *session = Session_init();
     if (session == NULL) {
         printf("ERROR: could not initialize session\n");
         return 1;
@@ -79,7 +79,6 @@ int main() {
         }
 
         if (session->outputFilePath != NULL) BinarioNaTela(session->outputFilePath);
-
     } while (option != 0);
     Session_clear(session);
     return 0;

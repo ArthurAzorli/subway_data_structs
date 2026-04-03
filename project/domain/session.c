@@ -1,13 +1,9 @@
-//
-// Created by User on 03/04/2026.
-//
-
 #include "session.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-struct Session * Session_init() {
-    struct Session * session = malloc(sizeof(struct Session));
+struct Session *Session_init() {
+    struct Session *session = malloc(sizeof(struct Session));
     if (session == NULL) {
         printf("ERROR: Failed to allocate memory for session\n");
         return NULL;
