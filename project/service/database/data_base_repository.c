@@ -20,6 +20,78 @@ bool DataBaseRepository_isRRNValid(const struct DataBase *dataBase, const size_t
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     return dataBase->dataHeader->nextInsert > rrn;
 }
+bool DataBaseRepository_updateHeaderCounts(
+        const struct DataBase *dataBase,
+        const struct SubwayRecord *oldRecord,
+        const struct SubwayRecord *newRecord) {
+
+    if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
+
+    const bool nameChanged = strcmp(oldRecord->stationName, newRecord->stationName) != 0;
+    const bool pairChanged = oldRecord->originStationID != newRecord->originStationID ||
+                       oldRecord->destinationStationID != newRecord->destinationStationID;
+
+    if (!nameChanged && !pairChanged) return true;
+
+    size_t oldStationCount = 0;
+    size_t newStationCount = 0;
+    size_t oldPairCount = 0;
+    size_t newPairCount = 0;
+
+    for (size_t rrn = 0; rrn < dataBase->dataHeader->nextInsert; rrn++) {
+        struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
+        if (record == NULL) continue;
+
+
+            if (record->stationNameLength == oldRecord->stationNameLength &&
+                memcmp(record->stationName, oldRecord->stationName, record->stationNameLength) == 0) {
+                oldStationCount++;
+                }
+            if (record->stationNameLength == newRecord->stationNameLength &&
+                memcmp(record->stationName, newRecord->stationName, record->stationNameLength) == 0) {
+                newStationCount++;
+                }
+
+
+        if (record->originStationID == oldRecord->originStationID &&
+            record->destinationStationID == oldRecord->destinationStationID) {
+            oldPairCount++;
+            }
+        if (record->originStationID == newRecord->originStationID &&
+            record->destinationStationID == newRecord->destinationStationID) {
+            newPairCount++;
+            }
+
+        SubwayRecord_free(record);
+    }
+
+
+    bool changeCounts = false;
+
+    if (nameChanged) {
+        if (oldStationCount == 1) {
+            dataBase->dataHeader->stationsCount--;
+            changeCounts = true;
+        }
+        if (newStationCount == 0) {
+            dataBase->dataHeader->stationsCount++;
+            changeCounts = true;
+        }
+    }
+
+    if (pairChanged) {
+        if (oldPairCount == 1) {
+            dataBase->dataHeader->pairStationsCount--;
+            changeCounts = true;
+        }
+        if (newPairCount == 0) {
+            dataBase->dataHeader->pairStationsCount++;
+            changeCounts = true;
+        }
+    }
+
+    return changeCounts;
+}
 
 size_t DataBaseRepository_countStation(const struct DataBase *dataBase, const size_t stationNameLength, const String stationName) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return 0;
@@ -148,31 +220,7 @@ bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct Sub
         return false;
     }
 
-    bool changeHeader = false;
-    if (strcmp(oldRecord->stationName, record->stationName) != 0) {
-        if (DataBaseRepository_countStation(dataBase, oldRecord->stationNameLength, oldRecord->stationName) == 1) {
-            dataBase->dataHeader->stationsCount--;
-            changeHeader = true;
-        }
-        if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 0) {
-            dataBase->dataHeader->stationsCount++;
-            changeHeader = true;
-        }
-    }
-
-    if (oldRecord->originStationID != record->originStationID || oldRecord->destinationStationID != record->destinationStationID) {
-        if (DatabaseRepository_countStationsPairs(dataBase, oldRecord) == 1) {
-            dataBase->dataHeader->pairStationsCount--;
-            changeHeader = true;
-        }
-
-        if (DatabaseRepository_countStationsPairs(dataBase, record) == 0) {
-            dataBase->dataHeader->pairStationsCount++;
-            changeHeader = true;
-        }
-    }
-
-    if (changeHeader) {
+    if (DataBaseRepository_updateHeaderCounts(dataBase, oldRecord, record)) {
         if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
             printf("ERROR: Failed to save header data file\n");
             SubwayRecord_free(oldRecord);
