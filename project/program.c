@@ -1,6 +1,7 @@
 #include "program.h"
 #include "service/database/data_base_repository.h"
 #include "service/input/input_repository.h"
+#include "core/utils/errors.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -19,14 +20,14 @@ void Program_requestInput(char *message) {
 
 bool Program_startSession(struct Session *session) {
     if (session == NULL) {
-        printf("ERROR: Failed to initialize session\n");
+        throwError("Failed to initialize session");
         return false;
     }
 
     Program_requestInput("Enter the input and output files paths:");
     char inputFilePath[PATH_FILE_MAX_LENGTH], outputFilePath[PATH_FILE_MAX_LENGTH];
     if (scanf("%s %s", inputFilePath, outputFilePath) != 2) {
-        printf("ERROR: can not reading paths files\n");
+        throwError("Can not reading paths files");
         return false;
     }
 
@@ -37,20 +38,20 @@ bool Program_startSession(struct Session *session) {
 
     struct DataBase *dataBase = DataBaseRepository_init(session->outputFilePath);
     if (dataBase == NULL) {
-        printf("ERROR: Failed to initialize data base\n");
+        throwError("Failed to initialize data base");
         return false;
     }
 
     struct InputFile *inputFile = InputRepository_openFile(session->inputFilePath);
     if (inputFile == NULL) {
-        printf("ERROR: Failed to open file %s\n", inputFilePath);
+        throwError("Failed to open file");
         return false;
     }
 
     struct SubwayRecord *record;
     while ((record = InputRepository_extractRecord(inputFile)) != NULL) {
         if (!DataBaseRepository_createRecord(dataBase, record)) {
-            printf("ERROR: Failed to create record in data base\n");
+            throwError("Failed to create record in data base");
             SubwayRecord_free(record);
             return false;
         }

@@ -1,16 +1,16 @@
 #include "data_base_repository.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "header_repository.h"
-#include "../../core/file/file_repository.h"
 #include "record_repository.h"
+#include "../../core/file/file_repository.h"
+#include "../../core/utils/errors.h"
 
 bool DataBaseRepository_isDataBaseValid(const struct DataBase *dataBase) {
     if (dataBase == NULL || dataBase->dataFile == NULL || dataBase->dataHeader == NULL) {
-        printf("ERROR: Invalid data base\n");
+        throwError("Invalid data base");
         return false;
     }
     return true;
@@ -97,7 +97,7 @@ size_t DataBaseRepository_countStation(const struct DataBase *dataBase, const si
                                        const String stationName) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return 0;
     if (stationName == NULL) {
-        printf("ERROR: Invalid station name\n");
+        throwError("Invalid station name");
         return 0;
     }
 
@@ -134,20 +134,20 @@ size_t DatabaseRepository_countStationsPairs(const struct DataBase *dataBase, co
 struct DataBase *DataBaseRepository_init(const String path) {
     struct DataFile *dataFile = FileRepository_openOrCreate(path);
     if (dataFile == NULL) {
-        printf("ERROR: Failed to open data base file\n");
+        throwError("Failed to open data base file");
         return NULL;
     }
 
     struct DataHeader *dataHeader = HeaderRepository_init(dataFile);
     if (dataHeader == NULL) {
-        printf("ERROR: Failed to initialize data header\n");
+        throwError("Failed to initialize data header");
         FileRepository_close(dataFile);
         return NULL;
     }
 
     struct DataBase *database = malloc(sizeof(struct DataBase));
     if (database == NULL) {
-        printf("ERROR: Failed to allocate memory for data base\n");
+        throwError("Failed to allocate memory for data base");
         FileRepository_close(dataFile);
         free(dataHeader);
         return NULL;
@@ -168,7 +168,7 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
     if (lastRemoved != EMPTY) {
         rrn = lastRemoved;
         if (!RecordRepository_readLastRemoved(dataBase->dataFile, lastRemoved, &dataBase->dataHeader->lastRemoved)) {
-            printf("ERROR: Failed to read last removed record\n");
+            throwError("Failed to read last removed record");
             return false;
         }
         reuse = true;
@@ -176,7 +176,7 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
 
     record->rrn = rrn;
     if (!RecordRepository_writeRecord(dataBase->dataFile, record)) {
-        printf("ERROR: Failed to write record data file\n");
+        throwError("Failed to write record data file");
         return false;
     }
 
@@ -187,7 +187,7 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
             ->dataHeader->pairStationsCount++;
 
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
-        printf("ERROR: Failed to write to data header file\n");
+        throwError("Failed to write to data header file");
         return false;
     }
     return FileRepository_flush(dataBase->dataFile);
@@ -196,13 +196,13 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
 struct SubwayRecord *DataBaseRepository_readRecord(const struct DataBase *dataBase, const size_t rrn) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return NULL;
     if (!DataBaseRepository_isRRNValid(dataBase, rrn)) {
-        printf("ERROR: RRN %zu is out of bounds\n", rrn);
+        throwError("RRN is out of bounds");
         return NULL;
     }
 
     struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
     if (record == NULL) {
-        printf("ERROR: Failed to read record data file\n");
+        throwError("Failed to read record data file");
         return NULL;
     }
 
@@ -216,7 +216,7 @@ bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct Sub
 
     struct SubwayRecord *oldRecord = RecordRepository_readRecord(dataBase->dataFile, record->rrn);
     if (oldRecord == NULL) {
-        printf("ERROR: Failed to read record data file\n");
+        throwError("Failed to read record data file");
         return false;
     }
 
@@ -227,14 +227,14 @@ bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct Sub
 
     if (DataBaseRepository_updateHeaderCounts(dataBase, oldRecord, record)) {
         if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
-            printf("ERROR: Failed to save header data file\n");
+            throwError("Failed to save header data file");
             SubwayRecord_free(oldRecord);
             return false;
         }
     }
 
     if (!RecordRepository_writeRecord(dataBase->dataFile, record)) {
-        printf("ERROR: Failed to write record data file\n");
+        throwError("Failed to write record data file");
         SubwayRecord_free(oldRecord);
         return false;
     }
@@ -246,27 +246,26 @@ bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct Sub
 bool DataBaseRepository_deleteRecord(const struct DataBase *dataBase, const size_t rrn) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     if (!DataBaseRepository_isRRNValid(dataBase, rrn)) {
-        printf("ERROR: RRN %zu is out of bounds\n", rrn);
+        throwError("RRN is out of bounds");
         return false;
     }
 
 
     struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
     if (record == NULL) {
-        printf("ERROR: Record %zu already removed or invalid\n", rrn);
+        throwError("Record already removed or invalid");
         return false;
     }
 
     if (!RecordRepository_removeRecord(dataBase->dataFile, rrn, &dataBase->dataHeader->lastRemoved)) {
-        printf("ERROR: Failed to remove record data file\n");
+        throwError("Failed to remove record data file");
         return false;
     }
 
-    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 0) dataBase->
-            dataHeader->stationsCount--;
+    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 0) dataBase->dataHeader->stationsCount--;
     if (DatabaseRepository_countStationsPairs(dataBase, record) == 0) dataBase->dataHeader->pairStationsCount--;
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
-        printf("ERROR: Failed to write to data header file\n");
+        throwError("Failed to write to data header file");
         return false;
     }
     SubwayRecord_free(record);
@@ -276,7 +275,7 @@ bool DataBaseRepository_deleteRecord(const struct DataBase *dataBase, const size
 bool DataBaseRepository_existRecord(const struct DataBase *dataBase, const String stationName) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     if (stationName == NULL) {
-        printf("ERROR: Invalid station name\n");
+        throwError("Invalid station name");
         return false;
     }
 

@@ -5,11 +5,12 @@
 #include <string.h>
 
 #include "../core/utils/types.h"
+#include "../core/utils/errors.h"
 
 struct SubwayRecord *SubwayRecord_init() {
     struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
     if (record == NULL) {
-        printf("ERROR: Failed to allocate data record\n");
+        throwError("ERROR: Failed to allocate data record\n");
         return NULL;
     }
     record->rrn = EMPTY;

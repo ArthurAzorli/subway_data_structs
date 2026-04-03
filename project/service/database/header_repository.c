@@ -3,8 +3,8 @@
 //
 
 #include "header_repository.h"
+#include "../../core/utils/errors.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #define HEADER_FILE_LENGTH 16
@@ -39,14 +39,14 @@ bool HeaderRepository_readHeader(struct DataHeader *header, struct DataFile *dat
 
 struct DataHeader *HeaderRepository_init(struct DataFile *dataFile) {
     if (dataFile == NULL) {
-        printf("ERROR: Invalid data file\n");
+        throwError("Invalid data file");
         return NULL;
     }
 
     if (!FileRepository_goTo(dataFile, HEADER_FILE_SECTION_OFFSET)) return NULL;
     struct DataHeader *header = malloc(sizeof(struct DataHeader));
     if (header == NULL) {
-        printf("ERROR: Could not allocate memory for the header\n");
+        throwError("Could not allocate memory for the header");
         return NULL;
     }
 
@@ -72,16 +72,16 @@ struct DataHeader *HeaderRepository_init(struct DataFile *dataFile) {
 
 bool HeaderRepository_save(const struct DataHeader *header, struct DataFile *dataFile) {
     if (!HeaderRepository_isHeaderValid(header)) {
-        printf("ERROR: Invalid header file\n");
+        throwError("Invalid header file");
         return false;
     }
     if (dataFile == NULL) {
-        printf("ERROR: Invalid data file\n");
+        throwError("Invalid data file");
         return false;
     }
     if (!FileRepository_goTo(dataFile, HEADER_FILE_SECTION_OFFSET)) return false;
     if (!HeaderRepository_writeHeader(header, dataFile)) {
-        printf("ERROR: Could not write header\n");
+        throwError("Could not write header");
         return false;
     }
     return true;

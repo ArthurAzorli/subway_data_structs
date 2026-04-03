@@ -3,6 +3,7 @@
 #include "project/program.h"
 #include "project/config.h"
 #include "project/lib/provided.h"
+#include "project/core/utils/errors.h"
 
 #ifdef RUN_TESTS
 #if RUN_TESTS
@@ -52,7 +53,7 @@ int main() {
     runTests();
     struct Session *session = Session_init();
     if (session == NULL) {
-        printf("ERROR: could not initialize session\n");
+        throwError("Could not initialize session");
         return 1;
     }
 
@@ -60,13 +61,13 @@ int main() {
     do {
         showMenu();
         if (scanf("%d", &option) != 1) {
-            printf("ERROR: Incorrect optional input\n");
+            throwError("Incorrect optional input");
             continue;
         }
         switch (option) {
             case 1:
                 if (!Program_startSession(session)) {
-                    printf("ERROR: could not start session\n");
+                    throwError("Could not start session");
                     Session_clear(session);
                     return 1;
                 }
@@ -74,7 +75,7 @@ int main() {
             case 0:
                 continue;
             default:
-                printf("ERROR: Unrecognized option\n");
+                throwError("Unrecognized option");
                 continue;
         }
 

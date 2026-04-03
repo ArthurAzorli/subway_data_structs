@@ -1,6 +1,6 @@
 #include "input_repository.h"
 
-#include <stdio.h>
+#include  "../../core/utils/errors.h"
 #include <stdlib.h>
 
 #include "../../core/utils/string.h"
@@ -22,7 +22,7 @@ uint32_t InputRepository_parseUInt(const String input) {
     char *endPtr;
     const unsigned long value = strtoul(input, &endPtr, 10);
     if (*endPtr != '\0') {
-        printf("ERROR: Failed to parse unsigned integer %s\n", input);
+        throwError("Failed to parse unsigned integer");
         return EMPTY;
     }
     return (uint32_t) value;
@@ -30,17 +30,17 @@ uint32_t InputRepository_parseUInt(const String input) {
 
 struct InputFile *InputRepository_openFile(const String path) {
     if (path == NULL) {
-        printf("ERROR: Invalid file path\n");
+        throwError("Invalid file path");
         return NULL;
     }
     struct InputFile *inputFile = malloc(sizeof(struct InputFile));
     if (inputFile == NULL) {
-        printf("ERROR: Failed to allocate input file\n");
+        throwError("Failed to allocate input file");
         return NULL;
     }
     FILE *file = fopen(path, "r");
     if (file == NULL) {
-        printf("ERROR: Failed to open file for reading\n");
+        throwError("Failed to open file for reading");
         free(inputFile);
         return NULL;
     }
@@ -51,7 +51,7 @@ struct InputFile *InputRepository_openFile(const String path) {
 
 struct SubwayRecord *InputRepository_extractRecord(struct InputFile *inputFile) {
     if (!InputRepository_isInputFileValid(inputFile)) {
-        printf("ERROR: Input file is invalid\n");
+        throwError("Input file is invalid");
         return NULL;
     }
 
@@ -74,7 +74,7 @@ struct SubwayRecord *InputRepository_extractRecord(struct InputFile *inputFile) 
 
     struct SubwayRecord *record = SubwayRecord_init();
     if (record == NULL) {
-        printf("ERROR: Failed to allocate subway record\n");
+        throwError("Failed to allocate subway record");
         return NULL;
     }
 

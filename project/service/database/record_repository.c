@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "../../core/file/file_repository.h"
+#include "../../core/utils/errors.h"
 
 #define TRASH 0x24
 #define RECORD_LENGTH 80
@@ -19,7 +20,7 @@ bool RecordRepository_readString(struct DataFile *dataFile, uint32_t *length, ch
     if (!FileRepository_readInt(dataFile, length)) return false;
     *result = malloc(*length + 1);
     if (*result == NULL) {
-        printf("ERROR: Failed to allocate string\n");
+        throwError("Failed to allocate string");
         return false;
     }
     if (*length > 0) {
@@ -148,11 +149,11 @@ struct SubwayRecord *RecordRepository_readRecord(struct DataFile *dataFile, cons
 bool RecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord *record) {
     if (dataFile == NULL) return false;
     if (!RecordRepository_isRecordValid(record)) {
-        printf("ERROR: Record is not a valid subway record\n");
+        throwError("Record is not a valid subway record");
         return false;
     }
     if (record->rrn == EMPTY) {
-        printf("ERROR: Record RRN is not set\n");
+        throwError("Record RRN is not set");
         return false;
     }
     const long offset = RecordRepository_getByteOffsetFromRRN(record->rrn);
@@ -161,7 +162,7 @@ bool RecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord
     if (!FileRepository_writeBool(dataFile, false)) return false;
     if (!FileRepository_writeInt(dataFile, EMPTY)) return false;
     if (!RecordRepository_writeRecordData(dataFile, record)) {
-        printf("ERROR: Fail to write record data\n");
+        throwError("Fail to write record data");
         return false;
     }
 

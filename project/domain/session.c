@@ -1,11 +1,12 @@
 #include "session.h"
-#include <stdio.h>
+
+#include "../core/utils/errors.h"
 #include <stdlib.h>
 
 struct Session *Session_init() {
     struct Session *session = malloc(sizeof(struct Session));
     if (session == NULL) {
-        printf("ERROR: Failed to allocate memory for session\n");
+        throwError("Failed to allocate memory for session");
         return NULL;
     }
     session->outputFilePath = NULL;
@@ -15,7 +16,7 @@ struct Session *Session_init() {
 
 void Session_clear(const struct Session *session) {
     if (session == NULL) {
-        printf("ERROR: Session is NULL\n");
+        throwError("Session is NULL");
         return;
     }
     if (session->inputFilePath != NULL) free(session->inputFilePath);
@@ -24,7 +25,7 @@ void Session_clear(const struct Session *session) {
 
 void Session_free(struct Session *session) {
     if (session == NULL) {
-        printf("ERROR: Session is NULL\n");
+        throwError("Session is NULL");
         return;
     }
     Session_clear(session);
