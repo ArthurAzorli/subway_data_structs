@@ -1,109 +1,86 @@
-#include "project/tests/file_repository_test.c"
-#include "project/tests/record_repository_test.c"
-#include "project/tests/header_repository_test.c"
-#include "project/tests/data_base_repository_test.c"
-#include "project/tests/string_test.c"
-#include "project/tests/input_repository_test.c"
-
 #include <stdio.h>
-#include <stdlib.h>
-#include "project/core/file/file_repository.h"
+
+#include "project/program.h"
+#include "project/config.h"
 #include "project/lib/provided.h"
-#include "project/core/utils/string.h"
-#include "project/core/utils/types.h"
-#include "project/domain/subway_record.h"
-#include "project/service/database/data_base_repository.h"
-#include "project/service/database/header_repository.h"
-#include "project/service/database/record_repository.h"
+
+#ifdef RUN_TESTS
+#if RUN_TESTS
+#include "project/tests/string_test.c"
+#include "project/tests/file_repository_test.c"
+#include "project/tests/header_repository_test.c"
+#include "project/tests/record_repository_test.c"
+#include "project/tests/data_base_repository_test.c"
+#include "project/tests/input_repository_test.c"
+#endif
+#endif
 
 
-int main() {
+void runTests() {
+#ifdef RUN_TESTS
+#if RUN_TESTS
+    printf("Starting tests...\n");
     string_test();
     file_repository_test();
     record_repository_test();
     header_repository_test();
     database_repository_test();
     input_repository_test();
+    printf("Finish tests\n");
+#    endif
+#endif
+}
 
 
-    char entrada[101], saida[101];
-    struct DataBase *dataBase;
+void showMenu() {
+#ifdef SHOW_MENU
+#if SHOW_MENU
+    printf("\n");
+    printf("=============================\n");
+    printf("             Menu            \n");
+    printf("=============================\n");
+    printf("\n");
+    printf("1. Start Session\n");
+    printf("0. Exit\n");
+    printf("\n");
+    printf("Enter a option:\n");
+#endif
+#endif
+}
 
-    int input;
-    if (scanf("%d", &input) != 1) {
-        printf("Incorrect input\n");
-        return 0;
+int main() {
+    runTests();
+    struct Session* session = Session_init();
+    if (session == NULL) {
+        printf("ERROR: could not initialize session\n");
+        return 1;
     }
 
-    switch (input) {
-        case 1:
-            if (scanf("%s %s", entrada, saida) != 2) {
-                return 0;
-            }
-            FILE *csvFile = fopen(entrada, "r");
-            if (csvFile == NULL) {
-                return 1;
-            }
-            dataBase = DataBaseRepository_init(saida);
-            if (dataBase == NULL) {
-                return 1;
-            }
-
-            char linha[1024];
-            char *c1, *c2, *c3, *c4, *c5, *c6, *c7, *c8;
-
-            fgets(linha, sizeof(linha), csvFile);
-            while (fgets(linha, sizeof(linha), csvFile) != NULL) {
-                linha[strcspn(linha, "\r\n")] = 0;
-
-                split(linha, ",", &c1, &c2, &c3, &c4, &c5, &c6, &c7, &c8);
-
-                struct SubwayRecord *rec = SubwayRecord_init();
-
-                rec->originStationID = (c1 && strlen(c1) > 0) ? (uint32_t) atoi(c1) : EMPTY;
-                rec->originLineID = (c3 && strlen(c3) > 0) ? (uint32_t) atoi(c3) : EMPTY;
-                rec->destinationStationID = (c5 && strlen(c5) > 0) ? (uint32_t) atoi(c5) : EMPTY;
-                rec->destinationDistant = (c6 && strlen(c6) > 0) ? (uint32_t) atoi(c6) : EMPTY;
-                rec->interactionLineID = (c7 && strlen(c7) > 0) ? (uint32_t) atoi(c7) : EMPTY;
-                rec->interactionStationID = (c8 && strlen(c8) > 0) ? (uint32_t) atoi(c8) : EMPTY;
-
-                if (c2 && strlen(c2) > 0) {
-                    rec->stationName = c2;
-                    rec->stationNameLength = (uint32_t) strlen(c2);
-                } else {
-                    rec->stationName = NULL;
-                    rec->stationNameLength = 0;
-                    free(c2);
+    int option;
+    do {
+        showMenu();
+        if (scanf("%d", &option) != 1) {
+            printf("ERROR: Incorrect optional input\n");
+            continue;
+        }
+        switch (option) {
+            case 1:
+                if (!Program_startSession(session)) {
+                    printf("ERROR: could not start session\n");
+                    Session_clear(session);
+                    return 1;
                 }
+                break;
+            case 0:
+                continue;
+            default:
+                printf("ERROR: Unrecognized option\n");
+                continue;
+        }
 
-                if (c4 && strlen(c4) > 0) {
-                    rec->lineName = c4;
-                    rec->lineNameLength = (uint32_t) strlen(c4);
-                } else {
-                    rec->lineName = NULL;
-                    rec->lineNameLength = 0;
-                    free(c4);
-                }
+        if (session->outputFilePath != NULL) BinarioNaTela(session->outputFilePath);
 
-                DataBaseRepository_createRecord(dataBase, rec);
-
-                free(c1);
-                free(c3);
-                free(c5);
-                free(c6);
-                free(c7);
-                free(c8);
-
-                SubwayRecord_free(rec);
-            }
-
-            fclose(csvFile);
-            DataBaseRepository_close(dataBase);
-
-            BinarioNaTela(saida);
-
-            break;
-    }
-
+    } while (option != 0);
+    Session_clear(session);
     return 0;
 }

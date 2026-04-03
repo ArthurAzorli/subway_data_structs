@@ -1,0 +1,8 @@
+#ifndef TRABALHO01_CONFIG_H
+#define TRABALHO01_CONFIG_H
+
+#define RUN_TESTS 0
+#define SHOW_MENU 1
+#define SHOW_INPUT_REQUEST 1
+
+#endif //TRABALHO01_CONFIG_H
