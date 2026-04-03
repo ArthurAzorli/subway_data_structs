@@ -59,12 +59,34 @@ int main() {
             continue;
         }
         switch (option) {
-            case 1:
+            case 1: {
                 if (!Program_readFromFile()) {
                     throwError("Could not start session");
                     return 1;
                 }
                 break;
+            }
+            case 2: {
+                if (!Program_showRecords()) {
+                    throwError("Could not start session");
+                    return 1;
+                }
+                break;
+            }
+            case 3: {
+                if (!Program_searchRecord()) {
+                    throwError("Could not start session");
+                    return 1;
+                }
+                break;
+            }
+            case 4: {
+                if (!Program_getRecordByRRN()) {
+                    throwError("Could not start session");
+                    return 1;
+                }
+                break;
+            }
             case 0:
                 continue;
             default:

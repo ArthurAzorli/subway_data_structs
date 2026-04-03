@@ -54,3 +54,15 @@ bool Program_readFromFile() {
     BinarioNaTela(outputFilePath);
     return true;
 }
+
+bool Program_showRecords() {
+    return true;
+}
+
+bool Program_searchRecord() {
+    return true;
+}
+
+bool Program_getRecordByRRN() {
+    return true;
+}
