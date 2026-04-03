@@ -15,11 +15,9 @@ bool DataBaseRepository_createRecord(const struct DataBase* dataBase, struct Sub
 
 struct SubwayRecord *DataBaseRepository_readRecord(const struct DataBase* dataBase, size_t rrn);
 
-bool DataBaseRepository_updateRecord(struct DataBase* dataBase, struct SubwayRecord *record);
+bool DataBaseRepository_updateRecord(const struct DataBase* dataBase, struct SubwayRecord *record);
 
 bool DataBaseRepository_deleteRecord(const struct DataBase* dataBase, size_t rrn);
-
-bool DataBaseRepository_existRecord(const struct DataBase* dataBase, String stationName);
 
 void DataBaseRepository_close(struct DataBase* dataBase);
 

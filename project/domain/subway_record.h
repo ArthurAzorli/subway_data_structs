@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "../core/utils/types.h"
 
 struct SubwayRecord {
     size_t rrn;
@@ -19,6 +20,8 @@ struct SubwayRecord {
 };
 
 struct SubwayRecord *SubwayRecord_init();
+
+bool SubwayRecord_isEquals(const struct SubwayRecord *thisRecord, const struct SubwayRecord *otherRecord);
 
 void SubwayRecord_free(struct SubwayRecord *record);
 

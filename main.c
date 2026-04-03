@@ -1,8 +1,8 @@
-// #include "project/tests/file_repository_test.c"
-// #include "project/tests/record_repository_test.c"
-// #include "project/tests/header_repository_test.c"
-// #include "project/tests/data_base_repository_test.c"
-// #include "project/tests/string_test.c"
+#include "project/tests/file_repository_test.c"
+#include "project/tests/record_repository_test.c"
+#include "project/tests/header_repository_test.c"
+#include "project/tests/data_base_repository_test.c"
+#include "project/tests/string_test.c"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,11 +17,11 @@
 
 
 int main() {
-    // string_test();
-    // file_repository_test();
-    // record_repository_test();
-    // header_repository_test();
-    // test_database_repository();
+    string_test();
+    file_repository_test();
+    record_repository_test();
+    header_repository_test();
+    test_database_repository();
 
     char entrada[101], saida[101];
     struct DataBase *dataBase;

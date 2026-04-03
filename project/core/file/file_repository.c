@@ -10,6 +10,9 @@
 #define FILE_STATUS_BYTE_OFFSET 0
 #define DATA_FILE_BYTE_OFFSET 1
 
+#define CONSISTENT_MARK '1'
+#define INCONSISTENT_MARK '0'
+
 struct DataFile {
     FILE *file;
     bool editMode;
@@ -53,7 +56,7 @@ bool FileRepository_startEditMode(struct DataFile *dataFile) {
         printf("ERROR: Failed go to byte offset of consistent mark file\n");
         return false;
     }
-    const bool consistent = false;
+    const bool consistent = INCONSISTENT_MARK;
     if (fwrite(&consistent, FILE_STATUS_BYTES_COUNT, 1, dataFile->file) != 1) {
         printf("ERROR: Failed to mark file as inconsistent\n");
         return false;
@@ -68,7 +71,7 @@ bool FileRepository_finishEditMode(struct DataFile *dataFile) {
         printf("ERROR: Failed to go to status byte\n");
         return false;
     }
-    const bool consistent = true;
+    const bool consistent = CONSISTENT_MARK;
     if (fwrite(&consistent, FILE_STATUS_BYTES_COUNT, 1, dataFile->file) != 1) {
         printf("ERROR: Failed to mark file as consistent\n");
         return false;
@@ -126,14 +129,14 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
             free(dataFile);
             return NULL;
         }
-        bool consistent;
+        uint8_t consistent;
         if (fread(&consistent, FILE_STATUS_BYTES_COUNT, 1, dataFile->file) != 1) {
             printf("ERROR: Failed to read consistent mark file\n");
             fclose(dataFile->file);
             free(dataFile);
             return NULL;
         }
-        if (!consistent) {
+        if (consistent != CONSISTENT_MARK) {
             printf("ERROR: inconsistent file\n");
             fclose(dataFile->file);
             free(dataFile);
