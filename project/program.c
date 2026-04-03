@@ -6,7 +6,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+
+#include "lib/provided.h"
 
 #define PATH_FILE_MAX_LENGTH 101
 
@@ -18,12 +19,7 @@ void Program_requestInput(char *message) {
 #endif
 }
 
-bool Program_startSession(struct Session *session) {
-    if (session == NULL) {
-        throwError("Failed to initialize session");
-        return false;
-    }
-
+bool Program_readFromFile() {
     Program_requestInput("Enter the input and output files paths:");
     char inputFilePath[PATH_FILE_MAX_LENGTH], outputFilePath[PATH_FILE_MAX_LENGTH];
     if (scanf("%s %s", inputFilePath, outputFilePath) != 2) {
@@ -31,18 +27,13 @@ bool Program_startSession(struct Session *session) {
         return false;
     }
 
-    Session_clear(session);
-    session->inputFilePath = strdup(inputFilePath);
-    session->outputFilePath = strdup(outputFilePath);
-
-
-    struct DataBase *dataBase = DataBaseRepository_init(session->outputFilePath);
+    struct DataBase *dataBase = DataBaseRepository_init(outputFilePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
-    struct InputFile *inputFile = InputRepository_openFile(session->inputFilePath);
+    struct InputFile *inputFile = InputRepository_openFile(inputFilePath);
     if (inputFile == NULL) {
         throwError("Failed to open file");
         return false;
@@ -60,5 +51,6 @@ bool Program_startSession(struct Session *session) {
 
     InputRepository_closeFile(inputFile);
     DataBaseRepository_close(dataBase);
+    BinarioNaTela(outputFilePath);
     return true;
 }

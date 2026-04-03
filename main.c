@@ -51,12 +51,6 @@ void showMenu() {
 
 int main() {
     runTests();
-    struct Session *session = Session_init();
-    if (session == NULL) {
-        throwError("Could not initialize session");
-        return 1;
-    }
-
     int option;
     do {
         showMenu();
@@ -66,9 +60,8 @@ int main() {
         }
         switch (option) {
             case 1:
-                if (!Program_startSession(session)) {
+                if (!Program_readFromFile()) {
                     throwError("Could not start session");
-                    Session_clear(session);
                     return 1;
                 }
                 break;
@@ -76,11 +69,8 @@ int main() {
                 continue;
             default:
                 throwError("Unrecognized option");
-                continue;
         }
 
-        if (session->outputFilePath != NULL) BinarioNaTela(session->outputFilePath);
     } while (option != 0);
-    Session_clear(session);
     return 0;
 }
