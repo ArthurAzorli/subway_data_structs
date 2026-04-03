@@ -5,8 +5,8 @@
 #ifndef TRABALHO01_HEADER_REPOSITORY_H
 #define TRABALHO01_HEADER_REPOSITORY_H
 
-#include "../core/file/file_repository.h"
-#include "../core/utils/types.h"
+#include "../../core/file/file_repository.h"
+#include "../../core/utils/types.h"
 
 struct DataHeader {
     uint32_t nextInsert;

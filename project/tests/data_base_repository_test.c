@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "../service/data_base_repository.h"
-#include "../service/header_repository.h"
+#include "../service/database/data_base_repository.h"
+#include "../service/database/header_repository.h"
 
-void test_database_repository() {
+void database_repository_test() {
     const char* path = "test_database_repository.bin";
     remove(path);
 

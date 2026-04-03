@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "header_repository.h"
-#include "../core/file/file_repository.h"
+#include "../../core/file/file_repository.h"
 #include "record_repository.h"
 
 bool DataBaseRepository_isDataBaseValid(const struct DataBase *dataBase) {

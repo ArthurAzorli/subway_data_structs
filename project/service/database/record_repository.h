@@ -1,8 +1,8 @@
 #ifndef RECORD_REPOSITORY_H
 #define RECORD_REPOSITORY_H
 
-#include "../domain/subway_record.h"
-#include "../core/file/file_repository.h"
+#include "../../domain/subway_record.h"
+#include "../../core/file/file_repository.h"
 
 bool RecordRepository_isRecordValid(const struct SubwayRecord *record);
 

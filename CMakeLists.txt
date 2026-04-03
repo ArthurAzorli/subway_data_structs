@@ -10,12 +10,14 @@ add_executable(Trabalho01
         project/core/file/file_repository.h
         project/domain/subway_record.h
         project/domain/subway_record.c
-        project/service/data_base_repository.c
-        project/service/data_base_repository.h
-        project/service/record_repository.c
-        project/service/record_repository.h
-        project/service/header_repository.c
-        project/service/header_repository.h
-        main.c
+        project/service/input/input_repository.h
+        project/service/input/input_repository.c
+        project/service/database/data_base_repository.c
+        project/service/database/data_base_repository.h
+        project/service/database/record_repository.c
+        project/service/database/record_repository.h
+        project/service/database/header_repository.c
+        project/service/database/header_repository.h
         project/lib/provided.h
-        project/lib/provided.c)
+        project/lib/provided.c
+        main.c)

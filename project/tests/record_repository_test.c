@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "../core/file/file_repository.h"
-#include "../service/record_repository.h"
+#include "../service/database/record_repository.h"
 #include "../domain/subway_record.h"
 
 #define RECORD_LENGTH_2 80

@@ -1,8 +1,8 @@
 #ifndef DATA_BASE_REPOSITORY_H
 #define DATA_BASE_REPOSITORY_H
 
-#include "../core/utils/types.h"
-#include "../domain/subway_record.h"
+#include "../../core/utils/types.h"
+#include "../../domain/subway_record.h"
 
 struct DataBase {
     struct DataHeader *dataHeader;

@@ -3,6 +3,7 @@
 #include "project/tests/header_repository_test.c"
 #include "project/tests/data_base_repository_test.c"
 #include "project/tests/string_test.c"
+#include "project/tests/input_repository_test.c"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,9 +12,9 @@
 #include "project/core/utils/string.h"
 #include "project/core/utils/types.h"
 #include "project/domain/subway_record.h"
-#include "project/service/data_base_repository.h"
-#include "project/service/header_repository.h"
-#include "project/service/record_repository.h"
+#include "project/service/database/data_base_repository.h"
+#include "project/service/database/header_repository.h"
+#include "project/service/database/record_repository.h"
 
 
 int main() {
@@ -21,7 +22,9 @@ int main() {
     file_repository_test();
     record_repository_test();
     header_repository_test();
-    test_database_repository();
+    database_repository_test();
+    input_repository_test();
+
 
     char entrada[101], saida[101];
     struct DataBase *dataBase;
