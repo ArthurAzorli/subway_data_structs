@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
 #include "../service/database/data_base_repository.h"
 #include "../service/database/header_repository.h"
 
