@@ -61,6 +61,9 @@ void showMenu() {
     printf("=============================\n");
     printf("\n");
     printf("1. Start Session\n");
+    printf("2. Show Records\n");
+    printf("3. Search Records\n");
+    printf("4. Get Record by RRN\n");
     printf("0. Exit\n");
     printf("\n");
     printf("Enter a option:\n");
@@ -115,12 +118,12 @@ int main() {
                 break;
             }
             case 0:
-                continue;
+                return 0;
             default:
                 throwError("Unrecognized option");
         }
 
-    } while (option != 0);
+    } while (LOOP_RUN);
     return 0;
 }
 

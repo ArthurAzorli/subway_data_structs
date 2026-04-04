@@ -228,6 +228,7 @@ struct SubwayRecord *RecordRepository_readRecord(struct DataFile *dataFile, cons
 
     struct SubwayRecord *record = SubwayRecord_init();
     if (record == NULL) return NULL;
+    record->rrn = rrn;
     if (!RecordRepository_readRecordData(dataFile, record)) {
         SubwayRecord_free(record);
         return NULL;

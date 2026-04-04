@@ -50,4 +50,12 @@
  */
 #define SHOW_INPUT_REQUEST 1
 
+/**
+ * @brief Controls whether to run continuous loop for interactive menu.
+ *
+ * Set to 1 to enable the continuous interactive menu loop for user input.
+ * Set to 0 to disable the loop (useful for testing or batch processing).
+ */
+#define LOOP_RUN 1
+
 #endif //TRABALHO01_CONFIG_H
