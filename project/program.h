@@ -1,3 +1,11 @@
+/**
+ * @file program.h
+ * @brief Main program operations and user interface functions.
+ *
+ * This module provides the primary operations available to the user including
+ * file import, record display, searching, and direct RRN access.
+ */
+
 #ifndef TRABALHO01_PROGRAM_H
 #define TRABALHO01_PROGRAM_H
 

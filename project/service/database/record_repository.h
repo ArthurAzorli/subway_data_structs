@@ -1,3 +1,12 @@
+/**
+ * @file record_repository.h
+ * @brief Low-level record I/O operations for the database.
+ *
+ * This module handles reading, writing, and managing individual subway records
+ * within the binary database file, including handling of deleted records via
+ * a linked list structure.
+ */
+
 #ifndef RECORD_REPOSITORY_H
 #define RECORD_REPOSITORY_H
 

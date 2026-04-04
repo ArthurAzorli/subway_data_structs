@@ -12,6 +12,14 @@
 
 #define INPUT_MAX_LENGTH 101
 
+/**
+ * @brief Prints an input request message to the user.
+ *
+ * Displays a message prompting for user input, controlled by
+ * SHOW_INPUT_REQUEST configuration option.
+ *
+ * @param message: The prompt message to display (can be NULL)
+ */
 void Program_requestInput(char *message) {
 #ifdef SHOW_INPUT_REQUEST
 #if SHOW_INPUT_REQUEST
@@ -20,6 +28,14 @@ void Program_requestInput(char *message) {
 #endif
 }
 
+/**
+ * @brief Displays a subway record in human-readable format.
+ *
+ * Prints all fields of a record, using "NULO" for empty/null values.
+ * Fields are space-separated on a single line.
+ *
+ * @param record: The record to display (must not be NULL)
+ */
 void Program_printRecord(const struct SubwayRecord *record) {
     if (record->originStationID != EMPTY) printf("%d ", record->originStationID);
     else printf("NULO ");
@@ -40,7 +56,16 @@ void Program_printRecord(const struct SubwayRecord *record) {
     printf("\n");
 }
 
+/**
+ * @brief Reads subway records from a file and imports them into the database.
+ *
+ * Prompts the user for input and output file paths, opens the input file,
+ * parses each record, and inserts them into the binary database file.
+ *
+ * @return true if import completed successfully, false on error
+ */
 bool Program_readFromFile() {
+    //le caminho dos arquivos
     Program_requestInput("Enter the input and output files paths:");
     char inputFilePath[INPUT_MAX_LENGTH], outputFilePath[INPUT_MAX_LENGTH];
     if (scanf("%s %s", inputFilePath, outputFilePath) != 2) {
@@ -48,18 +73,21 @@ bool Program_readFromFile() {
         return false;
     }
 
+    //inicializa database
     struct DataBase *dataBase = DataBaseRepository_init(outputFilePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
+    //inicializa input file
     struct InputFile *inputFile = InputRepository_openFile(inputFilePath);
     if (inputFile == NULL) {
         throwError("Failed to open file");
         return false;
     }
 
+    //extrai os registros do arquivo de entrada e salva no banco de dados enquanto houver registros
     struct SubwayRecord *record;
     while ((record = InputRepository_extractRecord(inputFile)) != NULL) {
         if (!DataBaseRepository_createRecord(dataBase, record)) {
@@ -70,13 +98,19 @@ bool Program_readFromFile() {
         SubwayRecord_free(record);
     }
 
+    //finaliza procedimento
     InputRepository_closeFile(inputFile);
     DataBaseRepository_close(dataBase);
     BinarioNaTela(outputFilePath);
     return true;
 }
 
+/**
+ * @brief Displays all active (non-deleted) records in the database.
+ * @return true if display completed successfully, false on error
+ */
 bool Program_showRecords() {
+    //le caminho do aqruivo binário
     Program_requestInput("Enter the file path:");
     char filePath[INPUT_MAX_LENGTH];
     if (scanf("%s", filePath) != 1) {
@@ -84,12 +118,14 @@ bool Program_showRecords() {
         return false;
     }
 
+    //iniciliza database
     struct DataBase* dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
+    //printa cada registro do data base
     bool printedRecord = false;
     for (int i = 0; i < dataBase->dataHeader->nextInsert; i++) {
         struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, i);
@@ -99,7 +135,10 @@ bool Program_showRecords() {
         SubwayRecord_free(record);
     }
 
+    //se nao ha registros printa mensagem
     if (!printedRecord) printf("Registro inexistente.\n");
+
+    //finliza procedimento
     DataBaseRepository_close(dataBase);
     return true;
 }
@@ -108,21 +147,28 @@ bool Program_searchRecord() {
     return true;
 }
 
+/**
+ * @brief Retrieves and displays a specific record by its RRN.
+ * @return true if record was found and displayed, false if RRN invalid or error
+ */
 bool Program_getRecordByRRN() {
     uint32_t rrn;
     char filePath[INPUT_MAX_LENGTH];
+    // le caminho do arquivo binario e o rrn do regitrso desejado
     Program_requestInput("Enter the file path and RRN:");
     if (scanf("%s %u", filePath, &rrn) != 2) {
         throwError("Failed read file path and RRN");
         return false;
     }
 
+    //inicializa database
     struct DataBase* dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
+    //le o regitro se conseguiu o printa se nao fala que registro nao existe
     struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
     if (record == NULL) {
         printf("Registro inexistente.\n");
@@ -131,6 +177,7 @@ bool Program_getRecordByRRN() {
         SubwayRecord_free(record);
     }
 
+    //finaliza procedimento
     DataBaseRepository_close(dataBase);
     return true;
 }

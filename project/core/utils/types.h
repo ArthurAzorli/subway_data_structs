@@ -1,23 +1,20 @@
+/**
+ * @file types.h
+ * @brief Defines custom types and constants used throughout the project.
+ */
+
 #ifndef TYPES_H
 #define TYPES_H
 #include <stdint.h>
-#include <stddef.h>
 
+/** @brief Special value representing an empty or uninitialized state. */
 #define EMPTY 0xFFFFFFFF
 
 #define true 1
 #define false 0
 
+/** @brief Custom boolean type using unsigned 8-bit integer. */
 typedef uint8_t bool;
 typedef const char *String;
-
-struct DateTime {
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t second;
-    uint8_t day;
-    uint8_t month;
-    uint16_t year;
-};
 
 #endif //TYPES_H

@@ -1,8 +1,15 @@
+/**
+ * @file main.c
+ * @brief Application entry point and main event loop.
+ *
+ * Initializes tests if configured, displays user menu, and handles user
+ * selections to invoke various program operations.
+ */
+
 #include <stdio.h>
 
 #include "project/program.h"
 #include "project/config.h"
-#include "project/lib/provided.h"
 #include "project/core/utils/errors.h"
 
 #ifdef RUN_TESTS
@@ -17,6 +24,13 @@
 #endif
 
 
+/**
+ * @brief Runs all configured unit tests.
+ *
+ * Executes test suites for string utilities, file operations, header management,
+ * record I/O, database operations, and input parsing. Only runs if RUN_TESTS
+ * configuration is enabled.
+ */
 void runTests() {
 #ifdef RUN_TESTS
 #if RUN_TESTS
@@ -32,6 +46,12 @@ void runTests() {
 #endif
 }
 
+/**
+ * @brief Displays the main menu to the user.
+ *
+ * Shows available program operations and prompts for user selection.
+ * Menu display is controlled by SHOW_MENU configuration option.
+ */
 void showMenu() {
 #ifdef SHOW_MENU
 #if SHOW_MENU
@@ -48,6 +68,14 @@ void showMenu() {
 #endif
 }
 
+/**
+ * @brief Main entry point for the subway database application.
+ *
+ * Runs configured unit tests, displays the main menu, and processes user
+ * commands in a loop until the user chooses to exit.
+ *
+ * @return EXIT_SUCCESS (0) on successful completion, non-zero on error
+ */
 int main() {
     runTests();
     int option;
@@ -60,28 +88,28 @@ int main() {
         switch (option) {
             case 1: {
                 if (!Program_readFromFile()) {
-                    throwError("Could not start session");
+                    throwError("Could not read from file");
                     return 1;
                 }
                 break;
             }
             case 2: {
                 if (!Program_showRecords()) {
-                    throwError("Could not start session");
+                    throwError("Could not show all records");
                     return 1;
                 }
                 break;
             }
             case 3: {
                 if (!Program_searchRecord()) {
-                    throwError("Could not start session");
+                    throwError("Could not start search for records");
                     return 1;
                 }
                 break;
             }
             case 4: {
                 if (!Program_getRecordByRRN()) {
-                    throwError("Could not start session");
+                    throwError("Could not get record by RRN");
                     return 1;
                 }
                 break;
