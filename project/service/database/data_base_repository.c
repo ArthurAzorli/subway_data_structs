@@ -50,14 +50,14 @@ bool DataBaseRepository_updateHeaderCounts(
     const struct SubwayRecord *newRecord) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
 
-    // verifica se o nome da estacao ou par de proxima estacao foi modificado
+    // Check if the station name or next station pair was modified
     const bool nameChanged = strcmp(oldRecord->stationName, newRecord->stationName) != 0;
     const bool pairChanged = oldRecord->originStationID != newRecord->originStationID ||
                              oldRecord->destinationStationID != newRecord->destinationStationID;
 
     if (!nameChanged && !pairChanged) return true;
 
-    //se foi modificado precorre os registros para ver a quantidade estacoes com novo e velho nome e o novo e velho par de estacao
+    // If it was modified, iterate through records to see the quantity of stations with new and old names and the new and old station pair
 
     size_t oldStationCount = 0;
     size_t newStationCount = 0;
@@ -91,7 +91,7 @@ bool DataBaseRepository_updateHeaderCounts(
         SubwayRecord_free(record);
     }
 
-    //verifica se ao atualizar o nome afeta a quantidade de estacoes
+    // Check if updating the name affects the number of stations
 
     bool changeCounts = false;
     if (nameChanged) {
@@ -105,7 +105,7 @@ bool DataBaseRepository_updateHeaderCounts(
         }
     }
 
-    //verifica se ao atualizar o par de estacao afeta a quantidade de pares de estacao
+    // Check if updating the station pair affects the number of station pairs
 
     if (pairChanged) {
         if (oldPairCount == 1) {
@@ -183,14 +183,14 @@ size_t DatabaseRepository_countStationsPairs(const struct DataBase *dataBase, co
  * @return Pointer to allocated DataBase on success, NULL on failure
  */
 struct DataBase *DataBaseRepository_init(String path) {
-    //abre o arquivo
+    // Open the file
     struct DataFile *dataFile = FileRepository_openOrCreate(path);
     if (dataFile == NULL) {
         throwError("Failed to open data base file");
         return NULL;
     }
 
-    //inicializa o header
+    // Initialize the header
     struct DataHeader *dataHeader = HeaderRepository_init(dataFile);
     if (dataHeader == NULL) {
         throwError("Failed to initialize data header");
@@ -218,7 +218,7 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
     bool reuse = false;
     uint32_t rrn = dataBase->dataHeader->nextInsert;
     const uint32_t lastRemoved = dataBase->dataHeader->lastRemoved;
-    // se tiver algum resgitro removido reutiliza seu rrn para criar o novo registro
+    // If there is any removed record, reuse its RRN to create the new record
     if (lastRemoved != EMPTY) {
         rrn = lastRemoved;
         if (!RecordRepository_readLastRemoved(dataBase->dataFile, lastRemoved, &dataBase->dataHeader->lastRemoved)) {
@@ -228,21 +228,21 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
         reuse = true;
     }
 
-    //salva o registro
+    // Save the record
     record->rrn = rrn;
     if (!RecordRepository_writeRecord(dataBase->dataFile, record)) {
         throwError("Failed to write record data file");
         return false;
     }
 
-    //verifica modificacoes do header
+    // Check header modifications
     if (!reuse) dataBase->dataHeader->nextInsert++;
     if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 1) dataBase->
             dataHeader->stationsCount++;
     if (record->destinationStationID != EMPTY && DatabaseRepository_countStationsPairs(dataBase, record) == 1) dataBase
             ->dataHeader->pairStationsCount++;
 
-    //salva o header
+    // Save the header
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
         throwError("Failed to write to data header file");
         return false;
@@ -258,7 +258,7 @@ struct SubwayRecord *DataBaseRepository_readRecord(const struct DataBase *dataBa
         return NULL;
     }
 
-    //le o registro pelo rrn
+    // Read the record by RRN
     struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
     if (record == NULL) {
         throwError("Failed to read record data file");
@@ -272,20 +272,20 @@ bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct Sub
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     if (!DataBaseRepository_isRRNValid(dataBase, record->rrn)) return false;
 
-    //pega o estado atual do registro
+    // Get the current state of the record
     struct SubwayRecord *oldRecord = RecordRepository_readRecord(dataBase->dataFile, record->rrn);
     if (oldRecord == NULL) {
         throwError("Failed to read record data file");
         return false;
     }
 
-    //se os estado do novo e o velho for igual, nao precisa atualizar fisicamente
+    // If the state of new and old are equal, no need to update physically
     if (SubwayRecord_isEquals(oldRecord, record)) {
         SubwayRecord_free(oldRecord);
         return true;
     }
 
-    //verifica modificacoes no header, se houver os salva
+    // Check modifications in header, if any save them
     if (DataBaseRepository_updateHeaderCounts(dataBase, oldRecord, record)) {
         if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
             throwError("Failed to save header data file");
@@ -294,7 +294,7 @@ bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct Sub
         }
     }
 
-    //salva as modificacoes do registro
+    // Save the record modifications
     if (!RecordRepository_writeRecord(dataBase->dataFile, record)) {
         throwError("Failed to write record data file");
         SubwayRecord_free(oldRecord);
@@ -322,20 +322,20 @@ bool DataBaseRepository_deleteRecord(const struct DataBase *dataBase, const size
         return false;
     }
 
-    //pega o estado atual do registro
+    // Get the current state of the record
     struct SubwayRecord *record = RecordRepository_readRecord(dataBase->dataFile, rrn);
     if (record == NULL) {
         throwError("Record already removed or invalid");
         return false;
     }
 
-    //remove o registro
+    // Remove the record
     if (!RecordRepository_removeRecord(dataBase->dataFile, rrn, &dataBase->dataHeader->lastRemoved)) {
         throwError("Failed to remove record data file");
         return false;
     }
 
-    //verifica latecoes no header e os salva
+    // Check changes in header and save them
     if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 0) dataBase->dataHeader->stationsCount--;
     if (DatabaseRepository_countStationsPairs(dataBase, record) == 0) dataBase->dataHeader->pairStationsCount--;
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {

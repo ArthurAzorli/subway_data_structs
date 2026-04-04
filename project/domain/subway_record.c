@@ -18,7 +18,7 @@ struct SubwayRecord *SubwayRecord_init() {
         throwError("ERROR: Failed to allocate data record\n");
         return NULL;
     }
-    //start the fiedls
+    // Initialize the fields
     record->rrn = EMPTY;
     record->originStationID = EMPTY;
     record->originLineID = EMPTY;
@@ -47,7 +47,7 @@ bool SubwayRecord_isEquals(const struct SubwayRecord *thisRecord, const struct S
     if (thisRecord->destinationDistant != otherRecord->destinationDistant) return false;
     if (thisRecord->interactionStationID != otherRecord->interactionStationID) return false;
     if (thisRecord->interactionLineID != otherRecord->interactionLineID) return false;
-    //se as strings nao forem null compara com strcmp
+    // If strings are not null compare with strcmp
     if (thisRecord->stationName != NULL && otherRecord->stationName != NULL) {
         if (strcmp(thisRecord->stationName, otherRecord->stationName) != 0) return false;
     } else if (thisRecord->stationName != otherRecord->stationName) {

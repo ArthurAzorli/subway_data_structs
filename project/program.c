@@ -65,7 +65,7 @@ void Program_printRecord(const struct SubwayRecord *record) {
  * @return true if import completed successfully, false on error
  */
 bool Program_readFromFile() {
-    //le caminho dos arquivos
+    // Read the file paths
     Program_requestInput("Enter the input and output files paths:");
     char inputFilePath[INPUT_MAX_LENGTH], outputFilePath[INPUT_MAX_LENGTH];
     if (scanf("%s %s", inputFilePath, outputFilePath) != 2) {
@@ -73,21 +73,21 @@ bool Program_readFromFile() {
         return false;
     }
 
-    //inicializa database
+    // Initialize database
     struct DataBase *dataBase = DataBaseRepository_init(outputFilePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
-    //inicializa input file
+    // Initialize input file
     struct InputFile *inputFile = InputRepository_openFile(inputFilePath);
     if (inputFile == NULL) {
         throwError("Failed to open file");
         return false;
     }
 
-    //extrai os registros do arquivo de entrada e salva no banco de dados enquanto houver registros
+    // Extract records from the input file and save to the database while there are records
     struct SubwayRecord *record;
     while ((record = InputRepository_extractRecord(inputFile)) != NULL) {
         if (!DataBaseRepository_createRecord(dataBase, record)) {
@@ -98,7 +98,7 @@ bool Program_readFromFile() {
         SubwayRecord_free(record);
     }
 
-    //finaliza procedimento
+    // Finish procedure
     InputRepository_closeFile(inputFile);
     DataBaseRepository_close(dataBase);
     BinarioNaTela(outputFilePath);
@@ -110,7 +110,7 @@ bool Program_readFromFile() {
  * @return true if display completed successfully, false on error
  */
 bool Program_showRecords() {
-    //le caminho do aqruivo binário
+    // Read the binary file path
     Program_requestInput("Enter the file path:");
     char filePath[INPUT_MAX_LENGTH];
     if (scanf("%s", filePath) != 1) {
@@ -118,14 +118,14 @@ bool Program_showRecords() {
         return false;
     }
 
-    //iniciliza database
+    // Initialize database
     struct DataBase* dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
-    //printa cada registro do data base
+    // Print each record from the database
     bool printedRecord = false;
     for (int i = 0; i < dataBase->dataHeader->nextInsert; i++) {
         struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, i);
@@ -135,10 +135,10 @@ bool Program_showRecords() {
         SubwayRecord_free(record);
     }
 
-    //se nao ha registros printa mensagem
+    // If there are no records, print message
     if (!printedRecord) printf("Registro inexistente.\n");
 
-    //finliza procedimento
+    // Finish procedure
     DataBaseRepository_close(dataBase);
     return true;
 }
@@ -154,21 +154,21 @@ bool Program_searchRecord() {
 bool Program_getRecordByRRN() {
     uint32_t rrn;
     char filePath[INPUT_MAX_LENGTH];
-    // le caminho do arquivo binario e o rrn do regitrso desejado
+    // Read the binary file path and the RRN of the desired record
     Program_requestInput("Enter the file path and RRN:");
     if (scanf("%s %u", filePath, &rrn) != 2) {
         throwError("Failed read file path and RRN");
         return false;
     }
 
-    //inicializa database
+    // Initialize database
     struct DataBase* dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
     }
 
-    //le o regitro se conseguiu o printa se nao fala que registro nao existe
+    // Read the record and print it if found, otherwise say record does not exist
     struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
     if (record == NULL) {
         printf("Registro inexistente.\n");
@@ -177,7 +177,7 @@ bool Program_getRecordByRRN() {
         SubwayRecord_free(record);
     }
 
-    //finaliza procedimento
+    // Finish procedure
     DataBaseRepository_close(dataBase);
     return true;
 }

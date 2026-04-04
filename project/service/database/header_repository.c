@@ -92,7 +92,7 @@ struct DataHeader *HeaderRepository_init(struct DataFile *dataFile) {
     header->stationsCount = 0;
     header->pairStationsCount = 0;
 
-    //se nao houver um header ou um incompleto o reseta, se nao le o header anetrior
+    // If there is no header or an incomplete one, reset it, otherwise read the previous header
     const size_t fileSize = FileRepository_fileSize(dataFile);
     if (fileSize < HEADER_FILE_LENGTH) {
         if (!HeaderRepository_save(header, dataFile)) {

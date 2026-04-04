@@ -173,10 +173,10 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
     struct DataFile *dataFile = malloc(sizeof(struct DataFile));
     if (!dataFile) return NULL;
     dataFile->editMode = false;
-    //tenta abrir o aqruivo
+    // Try to open the file
     dataFile->file = fopen(path, EDIT_MODE);
     if (!dataFile->file) {
-        //se o arquivo nao exite o cria
+        // If the file does not exist, create it
         if (!FileRepository_createFile(path, dataFile)) {
             printf("ERROR: Failed to create file\n");
             free(dataFile);
@@ -185,7 +185,7 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
         return dataFile;
     }
 
-    //inicializa virtualizacoes do tamanho e byte offset
+    // Initialize size and byte offset virtualizations
     if (!FileRepository_updateFileSize(dataFile)) {
         printf("ERROR: Failed to get file size\n");
         fclose(dataFile->file);
@@ -199,7 +199,7 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
     }
     dataFile->byteOffset = FILE_STATUS_BYTE_OFFSET;
 
-    //se ja tiver o marcado de consistencia o le
+    // If it already has the consistency marker, read it
     if (dataFile->size >= FILE_STATUS_BYTES_COUNT) {
         if (fseek(dataFile->file, FILE_STATUS_BYTE_OFFSET, SEEK_SET) != 0) {
             printf("ERROR: Failed to reposition cursor\n");
@@ -240,9 +240,9 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
 bool FileRepository_read(struct DataFile *dataFile, const size_t elementSize, const size_t count, void *buffer) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
     const size_t bytesCount = elementSize * count;
-    //se nao estiver na seção de dados vai para ela
+    // If not in the data section go to it
     if (!FileRepository_goToDataSection(dataFile)) return false;
-    //verifica posicoes de leitura para nao ler fora do arquivo
+    // Check read positions to not read outside the file
     if (dataFile->byteOffset + bytesCount > dataFile->size) {
         printf("ERROR: Invalid ByteOffset access\n");
         return false;
@@ -273,13 +273,13 @@ bool FileRepository_write(struct DataFile *dataFile, const size_t elementSize, c
         printf("ERROR: Invalid Buffer\n");
         return false;
     }
-    //se nao estiver na seção de dados vai para ela
+    // If not in the data section go to it
     if (!FileRepository_goToDataSection(dataFile)) return false;
     const size_t bytesCount = elementSize * count;
     const size_t byteOffsetFinal = dataFile->byteOffset + bytesCount;
-    //verifica posicoes de leitura para nao ler fora do arquivo
+    // Check read positions to not read outside the file
     if (dataFile->size < byteOffsetFinal) dataFile->size = byteOffsetFinal;
-    //marca como incosistente se já nao estiver
+    // Mark as inconsistent if not already
     if (!FileRepository_startEditMode(dataFile)) return false;
     if (fwrite(buffer, elementSize, count, dataFile->file) != count) {
         printf("ERROR: Failed to write data\n");
@@ -357,7 +357,7 @@ bool FileRepository_goTo(struct DataFile *dataFile, const long byteOffset) {
 bool FileRepository_readBool(struct DataFile *dataFile, bool *result) {
     uint8_t byte;
     if (!FileRepository_read(dataFile, UINT8_BYTES_COUNT, 1, &byte)) return false;
-    //converte do char '0' ou '1' para booleano
+    // Convert from char '0' or '1' to boolean
     *result = byte - '0' ? true : false;
     return true;
 }
@@ -405,7 +405,7 @@ bool FileRepository_readString(struct DataFile *dataFile, const size_t length, c
  * @return true if write was successful, false otherwise
  */
 bool FileRepository_writeBool(struct DataFile *dataFile, const bool value) {
-    //converte do booleano para um char '0' ou '1'
+    // Convert from boolean to char '0' or '1'
     const uint8_t byte = (value ? 1 : 0) + '0';
     return FileRepository_write(dataFile, UINT8_BYTES_COUNT, 1, &byte);
 }

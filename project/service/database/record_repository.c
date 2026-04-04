@@ -35,15 +35,15 @@ long RecordRepository_getByteOffsetFromRRN(const uint32_t rrn) {
  */
 bool RecordRepository_readString(struct DataFile *dataFile, uint32_t *length, char **result) {
     if (dataFile == NULL || length == NULL) return false;
-    // le o tamanho da string
+    // Read the string length
     if (!FileRepository_readInt(dataFile, length)) return false;
-    //aloca a memoria para a string
+    // Allocate memory for the string
     *result = malloc(*length + 1);
     if (*result == NULL) {
         throwError("Failed to allocate string");
         return false;
     }
-    //se for nao for vazia a le
+    // If it is not empty, read it
     if (*length > 0) {
         if (!FileRepository_readString(dataFile, *length, *result)) {
             free(*result);
@@ -130,7 +130,7 @@ bool RecordRepository_writeRecordData(struct DataFile *dataFile, struct SubwayRe
         return false;
     }
 
-    // o espaço restante do registro é preenchido por lixo '$'
+    // the remaining space of the record is filled with trash '$'
     while (remaining > 0) {
         if (!FileRepository_writeByte(dataFile, TRASH)) return false;
         remaining--;
@@ -221,7 +221,7 @@ struct SubwayRecord *RecordRepository_readRecord(struct DataFile *dataFile, cons
     const long offset = RecordRepository_getByteOffsetFromRRN(rrn);
     if (!FileRepository_goTo(dataFile, offset)) return NULL;
 
-    //verifica se nao esta removido
+    // Check if it is not removed
     bool removed;
     if (!RecordRepository_isRemoved(dataFile, rrn, &removed) || removed) return NULL;
     if (!FileRepository_moveUntil(dataFile, offset + RECORD_STATUS_LENGTH)) return NULL;
@@ -233,7 +233,7 @@ struct SubwayRecord *RecordRepository_readRecord(struct DataFile *dataFile, cons
         return NULL;
     }
 
-    //move para o proximo registro para otimizar leitura sequencial
+    // Move to the next record to optimize sequential reading
     FileRepository_moveUntil(dataFile, offset + RECORD_LENGTH);
     return record;
 }
@@ -262,11 +262,11 @@ bool RecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord
     const long offset = RecordRepository_getByteOffsetFromRRN(record->rrn);
     if (!FileRepository_goTo(dataFile, offset)) return false;
 
-    //inicializa os status da flag de removido e de proximo registro removido
+    // Initialize the status of the removed flag and next removed record
     if (!FileRepository_writeBool(dataFile, false)) return false;
     if (!FileRepository_writeInt(dataFile, EMPTY)) return false;
 
-    //escreve o resgistro
+    // Write the record
     if (!RecordRepository_writeRecordData(dataFile, record)) {
         throwError("Fail to write record data");
         return false;

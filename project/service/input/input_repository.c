@@ -69,14 +69,14 @@ struct InputFile *InputRepository_openFile(const String path) {
         throwError("Failed to allocate input file");
         return NULL;
     }
-    //abre o arquivo apenas paera leitura
+    // Open the file for reading only
     FILE *file = fopen(path, "r");
     if (file == NULL) {
         throwError("Failed to open file for reading");
         free(inputFile);
         return NULL;
     }
-    //inicializa os campos
+    // Initialize the fields
     inputFile->file = file;
     inputFile->line = 0;
     return inputFile;
@@ -101,24 +101,24 @@ struct SubwayRecord *InputRepository_extractRecord(struct InputFile *inputFile) 
 
     char line[LINE_MAX_LENGTH];
 
-    //ignore the first line of definitions
+    // Ignore the first line of definitions
     if (inputFile->line == 0) {
         fgets(line, LINE_MAX_LENGTH, inputFile->file);
         inputFile->line++;
     }
 
-    //pega a linha atual removendo o bytes de fim de arquivo
+    // Get the current line removing the end-of-file bytes
     if (fgets(line, LINE_MAX_LENGTH, inputFile->file) == NULL) return NULL;
     line[strcspn(line, "\r\n")] = 0;
     inputFile->line++;
 
-    //pega os campos a partir da linha lida
+    // Get the fields from the read line
     char *stationID, *stationName, *lineID, *lineName, *destinationID, *distant, *interactionLineID, *
             interactionStationID;
     split(line, FIELD_DELIMITER, &stationID, &stationName, &lineID, &lineName, &destinationID, &distant,
           &interactionLineID, &interactionStationID);
 
-    //preenche o registro com os campos lidos
+    // Fill the record with the read fields
     struct SubwayRecord *record = SubwayRecord_init();
     if (record == NULL) {
         throwError("Failed to allocate subway record");
