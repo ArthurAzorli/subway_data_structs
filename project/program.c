@@ -9,6 +9,7 @@
 
 #include "lib/provided.h"
 #include "service/database/header_repository.h"
+#include  "domain/search_criteria.h"
 
 #define INPUT_MAX_LENGTH 101
 
@@ -29,6 +30,39 @@ void Program_requestInput(char *message) {
 }
 
 /**
+ * @brief Prints an unsigned 32-bit integer value.
+ *
+ * Displays the numeric value if it is not EMPTY. If the value is equal to EMPTY,
+ * prints "NULO" instead. Used to standardize the output of integer fields in records.
+ *
+ * @param value: The unsigned 32-bit integer to print
+ */
+void Program_printUint32(const uint32_t value) {
+    if (value == EMPTY) {
+        printf("NULO");
+    } else {
+        printf("%d", value);
+    }
+}
+
+
+/**
+ * @brief Prints a string value.
+ *
+ * Displays the string if it is not NULL. If the string pointer is NULL,
+ * prints "NULO" instead. Used to standardize the output of string fields in records.
+ *
+ * @param value: The string to print (can be NULL)
+ */
+void Program_printString(const char *value) {
+    if (value == NULL) {
+        printf("NULO");
+    } else {
+        printf("%s", value);
+    }
+}
+
+/**
  * @brief Displays a subway record in human-readable format.
  *
  * Prints all fields of a record, using "NULO" for empty/null values.
@@ -37,24 +71,187 @@ void Program_requestInput(char *message) {
  * @param record: The record to display (must not be NULL)
  */
 void Program_printRecord(const struct SubwayRecord *record) {
-    if (record->originStationID != EMPTY) printf("%d ", record->originStationID);
-    else printf("NULO ");
-    if (record->stationName != NULL) printf("%s ", record->stationName);
-    else printf("NULO ");
-    if (record->originLineID != EMPTY) printf("%d ", record->originLineID);
-    else printf("NULO ");
-    if (record->lineName != NULL) printf("%s ", record->lineName);
-    else printf("NULO ");
-    if (record->destinationStationID != EMPTY) printf("%d ", record->destinationStationID);
-    else printf("NULO ");
-    if (record->destinationDistant != EMPTY) printf("%d ", record->destinationDistant);
-    else printf("NULO ");
-    if (record->interactionLineID != EMPTY) printf("%d ", record->interactionLineID);
-    else printf("NULO ");
-    if (record->interactionStationID != EMPTY) printf("%d", record->interactionStationID);
-    else printf("NULO");
+    Program_printUint32(record->originStationID);
+    printf(" ");
+    Program_printString(record->stationName);
+    printf(" ");
+    Program_printUint32(record->originLineID);
+    printf(" ");
+    Program_printString(record->lineName);
+    printf(" ");
+    Program_printUint32(record->destinationStationID);
+    printf(" ");
+    Program_printUint32(record->destinationDistant);
+    printf(" ");
+    Program_printUint32(record->interactionLineID);
+    printf(" ");
+    Program_printUint32(record->interactionStationID);
     printf("\n");
 }
+
+
+/**
+ * @brief Compares an unsigned 32-bit integer field value with a string representation.
+ *
+ * Converts the string value to an unsigned integer (treating empty string as EMPTY constant)
+ * and compares it with the record's field value. Used for matching numeric fields during search.
+ *
+ * @param recordValue: The numeric value from the record field to compare
+ * @param value: The string value to compare against (converted to uint32_t)
+ * @return true if values match, false otherwise
+ */
+bool Program_cmpUint32(const uint32_t recordValue, const char *value) {
+    const uint32_t convertedValue = strcmp(value, "") == 0 ? EMPTY : atoi(value);
+    return recordValue == convertedValue;
+}
+
+
+/**
+ * @brief Compares a string field value with a search string.
+ *
+ * Treats empty string as NULL. Returns true if both are NULL or if the record string
+ * matches the search string exactly.
+ *
+ * @param recordValue: The string value from the record field to compare
+ * @param value: The string value to compare against
+ * @return true if values match, false otherwise
+ */
+bool Program_cmpString(const char *recordValue, const char *value) {
+    if (value == NULL || strcmp(value, "") == 0) {
+        return recordValue == NULL;
+    } else {
+        return recordValue != NULL && strcmp(recordValue, value) == 0;
+    }
+}
+
+/**
+ * @brief Executes a search in the database based on user-defined criteria.
+ *
+ * Reads the number of criteria, then for each criterion reads the field name and value.
+ * Uses ScanQuoteString to correctly parse string values (including quoted and NULO values).
+ * Iterates through all records in the database, ignoring invalid or deleted ones, and checks
+ * if they match all criteria. If a record matches, it is printed. If no records match, prints
+ * "Registro inexistente.".
+ *
+ * @param dataBase: Pointer to the initialized database
+ * @return true if search executed successfully, false otherwise
+ */
+bool Program_searchCriteria(struct DataBase *dataBase) {
+    if (dataBase == NULL) return false;
+     bool printedAny = false;
+
+    // Reads the number of criteria for the search
+        uint32_t criteriaCount;
+        if (scanf("%u", &criteriaCount) != 1) {
+            throwError("Failed to read criteria count");
+            DataBaseRepository_close(dataBase);
+            return false;
+        }
+
+    // Reads the criteria for the search
+        struct SearchCriteria criteria[criteriaCount];
+        for (uint32_t j = 0; j < criteriaCount; j++) {
+
+            // Reads the search field
+            char field[INPUT_MAX_LENGTH];
+            if (scanf("%s", field) != 1) {
+                throwError("Failed to read search criteria field");
+                DataBaseRepository_close(dataBase);
+                return false;
+            }
+
+            // Defines which search field is desired
+            if (strcmp(field, "codEstacao") == 0) {
+                criteria[j].field = StationID;
+            } else if (strcmp(field, "nomeEstacao") == 0) {
+                criteria[j].field = StationName;
+            } else if (strcmp(field, "codLinha") == 0) {
+                criteria[j].field = LineID;
+            } else if (strcmp(field, "nomeLinha") == 0) {
+                criteria[j].field = LineName;
+            } else if (strcmp(field, "codDest") == 0) {
+                criteria[j].field = DestinationStationID;
+            } else if (strcmp(field, "distanciaDest") == 0) {
+                criteria[j].field = Distant;
+            } else if (strcmp(field, "codIntercambio") == 0) {
+                criteria[j].field = InteractionStationID;
+            } else if (strcmp(field, "linhaIntercambio") == 0) {
+                criteria[j].field = InteractionLineID;
+            } else {
+                throwError("Invalid search criteria field");
+                DataBaseRepository_close(dataBase);
+                return false;
+            }
+
+            // Reads the value using the provided ScanQuoteString function
+            ScanQuoteString(criteria[j].value);
+        }
+
+        // Iterates through all records in database
+        for (uint32_t rrn = 0; rrn < dataBase->dataHeader->nextInsert; rrn++) {
+            struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
+            if (record == NULL) continue;  // removed or invalid
+
+            // Checks each record field present in the search criteria
+            // If any do not match, skip to the next record
+            bool match = true;
+            for (uint32_t j = 0; j < criteriaCount; j++) {
+               const String value = criteria[j].value;
+                switch (criteria[j].field) {
+                    case StationID: {
+                        if (!Program_cmpUint32(record->originStationID, value)) match = false;
+                        break;
+                    }
+                    case StationName: {
+                        if (!Program_cmpString(record->stationName, value)) match = false;
+                        break;
+                    }
+                    case LineID: {
+                        if (!Program_cmpUint32(record->originLineID, value)) match = false;
+                        break;
+                    }
+                    case LineName: {
+                        if (!Program_cmpString(record->lineName, value)) match = false;
+                        break;
+                    }
+                    case DestinationStationID: {
+                        if (!Program_cmpUint32(record->destinationStationID, value)) match = false;
+                        break;
+                    }
+                    case Distant: {
+                        if (!Program_cmpUint32(record->destinationDistant, value)) match = false;
+                        break;
+                    }
+                    case InteractionStationID: {
+                        if (!Program_cmpUint32(record->interactionStationID, value)) match = false;
+                        break;
+                    }
+                    case InteractionLineID: {
+                        if (!Program_cmpUint32(record->interactionLineID, value)) match = false;
+                        break;
+                    }
+                    default:
+                        match = false;
+                        break;
+                }
+
+                if (!match) break;
+            }
+
+            // If a record is found, print it
+            if (match) {
+                Program_printRecord(record);
+                printedAny = true;
+            }
+
+            SubwayRecord_free(record);
+        }
+
+    // If there are no records founded, print message
+    if (!printedAny) printf("Registro inexistente.\n");
+    return true;
+}
+
 
 /**
  * @brief Reads subway records from a file and imports them into the database.
@@ -129,7 +326,7 @@ bool Program_showRecords() {
     bool printedRecord = false;
     for (int i = 0; i < dataBase->dataHeader->nextInsert; i++) {
         struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, i);
-        if (record == NULL) continue;
+        if (record == NULL) continue;  // removed or invalid
         Program_printRecord(record);
         printedRecord = true;
         SubwayRecord_free(record);
@@ -143,7 +340,47 @@ bool Program_showRecords() {
     return true;
 }
 
+
+/**
+ * @brief Performs multiple searches in the database.
+ *
+ * Reads the binary file path and the number of searches to perform. For each search,
+ * calls Program_searchCriteria to process the criteria and display matching records.
+ * If no records match any search, prints "Registro inexistente.".
+ *
+ * @return true if searches executed successfully, false otherwise
+ */
 bool Program_searchRecord() {
+    // Reads the binary file path and the number of searches
+    Program_requestInput("Enter the file path and number of searches:");
+    uint32_t searchesCount;
+    char filePath[INPUT_MAX_LENGTH];
+    if (scanf("%s %u", filePath, &searchesCount) != 2) {
+        throwError("Failed to read file path and searches count");
+        return false;
+    }
+
+    // If there are no searches, do nothing
+    if (searchesCount == 0) return true;
+
+    // Initializes the database
+    struct DataBase* dataBase = DataBaseRepository_init(filePath);
+    if (dataBase == NULL) {
+        throwError("Failed to initialize data base");
+        return false;
+    }
+
+    // Performs n searches
+    for (uint32_t i = 0; i < searchesCount; i++) {
+        if (!Program_searchCriteria(dataBase)) {
+            throwError("Failed to search record");
+            DataBaseRepository_close(dataBase);
+            return false;
+        }
+    }
+
+    // Finalizes procedure
+    DataBaseRepository_close(dataBase);
     return true;
 }
 
@@ -170,7 +407,7 @@ bool Program_getRecordByRRN() {
 
     // Read the record and print it if found, otherwise say record does not exist
     struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
-    if (record == NULL) {
+    if (record == NULL) {  // removed or invalid
         printf("Registro inexistente.\n");
     } else {
         Program_printRecord(record);
