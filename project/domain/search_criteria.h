@@ -17,7 +17,7 @@
  */
 struct SearchCriteria {
     enum RecordFields field;  /**< The specific field of the record to compare against */
-    char *value;             /**< The value to compare the record's field against (as a string) */
+    char value[101];          /**< The value to compare the record's field against (as a string) */
 };
 
 

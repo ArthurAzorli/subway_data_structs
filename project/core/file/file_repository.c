@@ -1,4 +1,5 @@
 #include "file_repository.h"
+#include "../utils/errors.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@ struct DataFile {
  */
 bool FileRepository_isDataFileValid(const struct DataFile *dataFile) {
     if (dataFile == NULL || dataFile->file == NULL) {
-        printf("ERROR: Invalid File\n");
+        throwError("Invalid File");
         return false;
     }
     return true;
@@ -53,7 +54,7 @@ bool FileRepository_isDataFileValid(const struct DataFile *dataFile) {
 bool FileRepository_goToAbsolute(struct DataFile *dataFile, const long absOffset) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
     if (fseek(dataFile->file, absOffset, SEEK_SET) != 0) {
-        printf("ERROR: Failed to reposition cursor\n");
+        throwError("Failed to reposition cursor");
         return false;
     }
     dataFile->byteOffset = absOffset;
@@ -73,7 +74,7 @@ bool FileRepository_goToDataSection(struct DataFile *dataFile) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
     if (dataFile->byteOffset < DATA_FILE_BYTE_OFFSET) {
         if (!FileRepository_goToAbsolute(dataFile, DATA_FILE_BYTE_OFFSET)) {
-            printf("ERROR: Failed to go to data section of file\n");
+            throwError("Failed to go to data section of file");
             return false;
         }
     }
@@ -94,12 +95,12 @@ bool FileRepository_startEditMode(struct DataFile *dataFile) {
     if (dataFile->editMode) return true;
     const long byteOffsetInitial = dataFile->byteOffset;
     if (!FileRepository_goToAbsolute(dataFile, FILE_STATUS_BYTE_OFFSET)) {
-        printf("ERROR: Failed go to byte offset of consistent mark file\n");
+        throwError("Failed go to byte offset of consistent mark file");
         return false;
     }
     const bool consistent = INCONSISTENT_MARK;
     if (fwrite(&consistent, FILE_STATUS_BYTES_COUNT, 1, dataFile->file) != 1) {
-        printf("ERROR: Failed to mark file as inconsistent\n");
+        throwError("Failed to mark file as inconsistent");
         return false;
     }
     dataFile->editMode = true;
@@ -118,12 +119,12 @@ bool FileRepository_startEditMode(struct DataFile *dataFile) {
 bool FileRepository_finishEditMode(struct DataFile *dataFile) {
     if (!dataFile->editMode) return true;
     if (!FileRepository_goToAbsolute(dataFile, FILE_STATUS_BYTE_OFFSET)) {
-        printf("ERROR: Failed to go to status byte\n");
+        throwError("Failed to go to status byte");
         return false;
     }
     const bool consistent = CONSISTENT_MARK;
     if (fwrite(&consistent, FILE_STATUS_BYTES_COUNT, 1, dataFile->file) != 1) {
-        printf("ERROR: Failed to mark file as consistent\n");
+        throwError("Failed to mark file as consistent");
         return false;
     }
     dataFile->editMode = false;
@@ -178,7 +179,7 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
     if (!dataFile->file) {
         // If the file does not exist, create it
         if (!FileRepository_createFile(path, dataFile)) {
-            printf("ERROR: Failed to create file\n");
+            throwError("Failed to create file");
             free(dataFile);
             return NULL;
         }
@@ -187,13 +188,13 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
 
     // Initialize size and byte offset virtualizations
     if (!FileRepository_updateFileSize(dataFile)) {
-        printf("ERROR: Failed to get file size\n");
+        throwError("Failed to get file size");
         fclose(dataFile->file);
         free(dataFile);
         return NULL;
     }
     if (fseek(dataFile->file, FILE_STATUS_BYTE_OFFSET, SEEK_SET) != 0) {
-        printf("ERROR: Failed to reposition cursor\n");
+        throwError("Failed to reposition cursor");
         free(dataFile);
         return NULL;
     }
@@ -202,20 +203,20 @@ struct DataFile *FileRepository_openOrCreate(const String path) {
     // If it already has the consistency marker, read it
     if (dataFile->size >= FILE_STATUS_BYTES_COUNT) {
         if (fseek(dataFile->file, FILE_STATUS_BYTE_OFFSET, SEEK_SET) != 0) {
-            printf("ERROR: Failed to reposition cursor\n");
+            throwError("Failed to reposition cursor");
             fclose(dataFile->file);
             free(dataFile);
             return NULL;
         }
         uint8_t consistent;
         if (fread(&consistent, FILE_STATUS_BYTES_COUNT, 1, dataFile->file) != 1) {
-            printf("ERROR: Failed to read consistent mark file\n");
+            throwError("Failed to read consistent mark file");
             fclose(dataFile->file);
             free(dataFile);
             return NULL;
         }
         if (consistent != CONSISTENT_MARK) {
-            printf("ERROR: inconsistent file\n");
+            throwError("inconsistent file");
             fclose(dataFile->file);
             free(dataFile);
             return NULL;
@@ -244,11 +245,11 @@ bool FileRepository_read(struct DataFile *dataFile, const size_t elementSize, co
     if (!FileRepository_goToDataSection(dataFile)) return false;
     // Check read positions to not read outside the file
     if (dataFile->byteOffset + bytesCount > dataFile->size) {
-        printf("ERROR: Invalid ByteOffset access\n");
+        throwError("Invalid ByteOffset access");
         return false;
     }
     if (fread(buffer, elementSize, count, dataFile->file) != count) {
-        printf("ERROR: Could not read %zu bytes\n", bytesCount);
+        throwError("Could not read bytes");
         return false;
     }
     dataFile->byteOffset += (long) bytesCount;
@@ -270,7 +271,7 @@ bool FileRepository_read(struct DataFile *dataFile, const size_t elementSize, co
 bool FileRepository_write(struct DataFile *dataFile, const size_t elementSize, const size_t count, const void *buffer) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
     if (buffer == NULL) {
-        printf("ERROR: Invalid Buffer\n");
+        throwError("Invalid Buffer");
         return false;
     }
     // If not in the data section go to it
@@ -282,7 +283,7 @@ bool FileRepository_write(struct DataFile *dataFile, const size_t elementSize, c
     // Mark as inconsistent if not already
     if (!FileRepository_startEditMode(dataFile)) return false;
     if (fwrite(buffer, elementSize, count, dataFile->file) != count) {
-        printf("ERROR: Failed to write data\n");
+        throwError("Failed to write data");
         return false;
     }
     dataFile->byteOffset += (long) bytesCount;
@@ -310,11 +311,11 @@ bool FileRepository_move(struct DataFile *dataFile, const long movement) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
     const long byteOffsetFinal = dataFile->byteOffset + movement;
     if (byteOffsetFinal < DATA_FILE_BYTE_OFFSET || byteOffsetFinal > dataFile->size) {
-        printf("ERROR: Invalid ByteOffset access\n");
+        throwError("Invalid ByteOffset access");
         return false;
     }
     if (fseek(dataFile->file, movement, SEEK_CUR) != 0) {
-        printf("ERROR: Failed to reposition cursor\n");
+        throwError("Failed to reposition cursor");
         return false;
     }
     dataFile->byteOffset = byteOffsetFinal;
@@ -439,7 +440,7 @@ bool FileRepository_writeInt(struct DataFile *dataFile, const uint32_t value) {
  */
 bool FileRepository_writeString(struct DataFile *dataFile, const size_t length, const char *value) {
     if (!value) {
-        printf("ERROR: Invalid String\n");
+        throwError("Invalid String");
         return false;
     }
     return FileRepository_write(dataFile, UINT8_BYTES_COUNT, length, value);

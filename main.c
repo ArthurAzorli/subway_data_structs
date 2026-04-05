@@ -71,6 +71,10 @@ void showMenu() {
 #endif
 }
 
+void printMessageError() {
+    fprintf(stderr, "Falha no processamento do arquivo.\n");
+}
+
 /**
  * @brief Main entry point for the subway database application.
  *
@@ -91,28 +95,28 @@ int main() {
         switch (option) {
             case 1: {
                 if (!Program_readFromFile()) {
-                    throwError("Could not read from file");
+                    printMessageError();
                     return 1;
                 }
                 break;
             }
             case 2: {
                 if (!Program_showRecords()) {
-                    throwError("Could not show all records");
+                    printMessageError();
                     return 1;
                 }
                 break;
             }
             case 3: {
                 if (!Program_searchRecord()) {
-                    throwError("Could not start search for records");
+                    printMessageError();
                     return 1;
                 }
                 break;
             }
             case 4: {
                 if (!Program_getRecordByRRN()) {
-                    throwError("Could not get record by RRN");
+                    printMessageError();
                     return 1;
                 }
                 break;

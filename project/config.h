@@ -15,16 +15,7 @@
  * Set to 1 to enable error output, 0 to disable.
  * When disabled, no error messages will be printed.
  */
-#define SHOW_ERRORS 1
-
-/**
- * @brief Controls whether to show only generic error messages.
- *
- * Set to 1 to display only "Falha no processamento do arquivo." instead of
- * detailed error messages. Requires SHOW_ERRORS to be 1.
- * Set to 0 to display full detailed error messages.
- */
-#define SIMPLE_ERRORS 1
+#define SHOW_ERRORS 0
 
 /**
  * @brief Controls whether to run unit tests at startup.
@@ -40,7 +31,7 @@
  * Set to 1 to show the menu with available options.
  * Set to 0 to hide menu output (useful for testing).
  */
-#define SHOW_MENU 1
+#define SHOW_MENU 0
 
 /**
  * @brief Controls whether to display input request prompts.
@@ -48,7 +39,7 @@
  * Set to 1 to show prompts asking the user for input.
  * Set to 0 to suppress prompts (useful for batch processing).
  */
-#define SHOW_INPUT_REQUEST 1
+#define SHOW_INPUT_REQUEST 0
 
 /**
  * @brief Controls whether to run continuous loop for interactive menu.
@@ -56,6 +47,6 @@
  * Set to 1 to enable the continuous interactive menu loop for user input.
  * Set to 0 to disable the loop (useful for testing or batch processing).
  */
-#define LOOP_RUN 1
+#define LOOP_RUN 0
 
 #endif //TRABALHO01_CONFIG_H
