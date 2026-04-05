@@ -212,6 +212,17 @@ struct DataBase *DataBaseRepository_init(String path) {
     return database;
 }
 
+/**
+ * @brief Creates a new record in the database.
+ *
+ * Inserts a new subway record into the database, assigning it an RRN (Relative Record Number).
+ * If there are deleted records available for reuse, their RRNs will be reused instead of
+ * incrementing nextInsert. Updates the header with new station and station pair counts.
+ *
+ * @param dataBase: The database where the record will be created
+ * @param record: The subway record to create (will be assigned an RRN)
+ * @return true if record was successfully created, false otherwise
+ */
 bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct SubwayRecord *record) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
 
@@ -251,6 +262,17 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
     return FileRepository_flush(dataBase->dataFile);
 }
 
+/**
+ * @brief Reads a record from the database by its RRN.
+ *
+ * Retrieves a subway record from the database using its Relative Record Number (RRN).
+ * Validates that the RRN is within bounds before reading. The returned record must be
+ * freed by the caller using SubwayRecord_free.
+ *
+ * @param dataBase: The database to read from
+ * @param rrn: Relative Record Number of the record to read
+ * @return Pointer to the allocated SubwayRecord on success, NULL on failure or invalid RRN
+ */
 struct SubwayRecord *DataBaseRepository_readRecord(const struct DataBase *dataBase, const size_t rrn) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return NULL;
     if (!DataBaseRepository_isRRNValid(dataBase, rrn)) {
@@ -268,6 +290,18 @@ struct SubwayRecord *DataBaseRepository_readRecord(const struct DataBase *dataBa
     return record;
 }
 
+/**
+ * @brief Updates an existing record in the database.
+ *
+ * Modifies a subway record identified by its RRN. Compares the old and new record states
+ * to determine if header counts (stations and station pairs) need updating. Only writes
+ * changes to the file if the record actually differs from its current state. Updates the
+ * header if station names or station pairs are modified.
+ *
+ * @param dataBase: The database containing the record to update
+ * @param record: The updated subway record with the RRN to identify which record to update
+ * @return true if record was successfully updated or was already up-to-date, false otherwise
+ */
 bool DataBaseRepository_updateRecord(const struct DataBase *dataBase, struct SubwayRecord *record) {
     if (!DataBaseRepository_isDataBaseValid(dataBase)) return false;
     if (!DataBaseRepository_isRRNValid(dataBase, record->rrn)) return false;
