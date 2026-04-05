@@ -15,9 +15,6 @@ static int simple_error_printed = 0;
 /**
  * @brief Outputs an error message to stderr based on configuration settings.
  *
- * This function prints error messages conditionally based on the SHOW_ERRORS
- * and SIMPLE_ERRORS configuration macros. If SIMPLE_ERRORS is enabled, a
- * generic error message is shown; otherwise, the provided message is displayed.
  * If SIMPLE_ERRORS is enabled, a generic error message is shown only once
  * during the entire execution. Otherwise, the provided message is displayed
  * every time.

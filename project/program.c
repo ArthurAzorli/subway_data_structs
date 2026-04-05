@@ -101,10 +101,17 @@ void Program_printRecord(const struct SubwayRecord *record) {
  * @return true if values match, false otherwise
  */
 bool Program_cmpUint32(const uint32_t recordValue, const char *value) {
-    const uint32_t convertedValue = strcmp(value, "") == 0 ? EMPTY : atoi(value);
-    return recordValue == convertedValue;
+    if (value == NULL || strcmp(value, "") == 0 || strcmp(value, "NULO") == 0) {
+        return recordValue == EMPTY;
+    }
+    char *endptr;
+    const long converted = strtol(value, &endptr, 10);
+    if (*endptr != '\0') {
+        // valor não é número válido
+        return false;
+    }
+    return recordValue == (uint32_t)converted;
 }
-
 
 /**
  * @brief Compares a string field value with a search string.
@@ -125,6 +132,23 @@ bool Program_cmpString(const char *recordValue, const char *value) {
 }
 
 /**
+ * @brief Reads an integer from stdin and stores it as a string.
+ *
+ * Attempts to capture the next whitespace-delimited input from the user
+ * and place it into the provided buffer. This allows numeric values or
+ * the keyword "NULO" to be handled uniformly as strings for later parsing.
+ * If the read fails, the buffer is set to an empty string to avoid
+ * undefined content.
+ *
+ * @param value: Pointer to the character buffer where the input will be stored
+ */
+void Program_readIntAsString(char* value) {
+    if (scanf("%s", value) != 1) {
+        strcpy(value, "");
+    }
+}
+
+/**
  * @brief Executes a search in the database based on user-defined criteria.
  *
  * Reads the number of criteria, then for each criterion reads the field name and value.
@@ -136,7 +160,7 @@ bool Program_cmpString(const char *recordValue, const char *value) {
  * @param dataBase: Pointer to the initialized database
  * @return true if search executed successfully, false otherwise
  */
-bool Program_searchCriteria(struct DataBase *dataBase) {
+bool Program_searchCriteria(const struct DataBase *dataBase) {
     if (dataBase == NULL) return false;
      bool printedAny = false;
 
@@ -144,7 +168,6 @@ bool Program_searchCriteria(struct DataBase *dataBase) {
         uint32_t criteriaCount;
         if (scanf("%u", &criteriaCount) != 1) {
             throwError("Failed to read criteria count");
-            DataBaseRepository_close(dataBase);
             return false;
         }
 
@@ -156,35 +179,38 @@ bool Program_searchCriteria(struct DataBase *dataBase) {
             char field[INPUT_MAX_LENGTH];
             if (scanf("%s", field) != 1) {
                 throwError("Failed to read search criteria field");
-                DataBaseRepository_close(dataBase);
                 return false;
             }
 
-            // Defines which search field is desired
+            // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
             if (strcmp(field, "codEstacao") == 0) {
                 criteria[j].field = StationID;
+                Program_readIntAsString(criteria[j].value);
             } else if (strcmp(field, "nomeEstacao") == 0) {
                 criteria[j].field = StationName;
+                ScanQuoteString(criteria[j].value);
             } else if (strcmp(field, "codLinha") == 0) {
                 criteria[j].field = LineID;
+                Program_readIntAsString(criteria[j].value);
             } else if (strcmp(field, "nomeLinha") == 0) {
                 criteria[j].field = LineName;
-            } else if (strcmp(field, "codDest") == 0) {
+                ScanQuoteString(criteria[j].value);
+            } else if (strcmp(field, "codProxEstacao") == 0) {
                 criteria[j].field = DestinationStationID;
-            } else if (strcmp(field, "distanciaDest") == 0) {
+                Program_readIntAsString(criteria[j].value);
+            } else if (strcmp(field, "distProxEstacao") == 0) {
                 criteria[j].field = Distant;
-            } else if (strcmp(field, "codIntercambio") == 0) {
+                Program_readIntAsString(criteria[j].value);
+            } else if (strcmp(field, "codEstIntegra") == 0) {
                 criteria[j].field = InteractionStationID;
-            } else if (strcmp(field, "linhaIntercambio") == 0) {
+                Program_readIntAsString(criteria[j].value);
+            } else if (strcmp(field, "codLinhaIntegra") == 0) {
                 criteria[j].field = InteractionLineID;
+                Program_readIntAsString(criteria[j].value);
             } else {
                 throwError("Invalid search criteria field");
-                DataBaseRepository_close(dataBase);
                 return false;
             }
-
-            // Reads the value using the provided ScanQuoteString function
-            ScanQuoteString(criteria[j].value);
         }
 
         // Iterates through all records in database
