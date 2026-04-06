@@ -1,5 +1,7 @@
+// Arthur Gagliardi Azorli - 16855452
+// Nícolas Silva Scorza - 17025079
+
 /**
- * @file main.c
  * @brief Application entry point and main event loop.
  *
  * Initializes tests if configured, displays user menu, and handles user
@@ -72,7 +74,7 @@ void showMenu() {
 }
 
 void printMessageError() {
-    fprintf(stderr, "Falha no processamento do arquivo.\n");
+    printf("Falha no processamento do arquivo.\n");
 }
 
 /**
@@ -96,28 +98,28 @@ int main() {
             case 1: {
                 if (!Program_readFromFile()) {
                     printMessageError();
-                    return 1;
+                    return 0;
                 }
                 break;
             }
             case 2: {
                 if (!Program_showRecords()) {
                     printMessageError();
-                    return 1;
+                    return 0;
                 }
                 break;
             }
             case 3: {
                 if (!Program_searchRecord()) {
                     printMessageError();
-                    return 1;
+                    return 0;
                 }
                 break;
             }
             case 4: {
                 if (!Program_getRecordByRRN()) {
                     printMessageError();
-                    return 1;
+                    return 0;
                 }
                 break;
             }
