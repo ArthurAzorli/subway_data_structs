@@ -22,10 +22,10 @@
  * current editing mode, total file size, and virtual byte offset within the data section.
  */
 struct DataFile {
-    FILE *file;           /**< Pointer to the underlying FILE object */
-    bool editMode;        /**< true if file is currently in edit mode, false otherwise */
-    size_t size;          /**< Total file size in bytes (including 1-byte header) */
-    long byteOffset;      /**< Current byte offset within the file */
+    FILE *file; /**< Pointer to the underlying FILE object */
+    bool editMode; /**< true if file is currently in edit mode, false otherwise */
+    size_t size; /**< Total file size in bytes (including 1-byte header) */
+    long byteOffset; /**< Current byte offset within the file */
 };
 
 /**

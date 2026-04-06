@@ -126,9 +126,6 @@ int main() {
             default:
                 throwError("Unrecognized option");
         }
-
     } while (LOOP_RUN);
     return 0;
 }
-
-

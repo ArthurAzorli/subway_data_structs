@@ -15,8 +15,8 @@
  * Maintains file pointer and tracks current line number for parsing.
  */
 struct InputFile {
-    FILE *file;      /**< Pointer to the open file */
-    size_t line;     /**< Current line number  */
+    FILE *file; /**< Pointer to the open file */
+    size_t line; /**< Current line number  */
 };
 
 /**

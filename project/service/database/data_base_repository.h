@@ -21,8 +21,8 @@
  * which together form a complete database instance.
  */
 struct DataBase {
-    struct DataHeader *dataHeader;  /**< Pointer to the database header with metadata */
-    struct DataFile *dataFile;      /**< Pointer to the binary data file */
+    struct DataHeader *dataHeader; /**< Pointer to the database header with metadata */
+    struct DataFile *dataFile; /**< Pointer to the binary data file */
 };
 
 struct DataBase *DataBaseRepository_init(String path);

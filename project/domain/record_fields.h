@@ -14,14 +14,14 @@
  * for searching, filtering, and comparison operations.
  */
 enum RecordFields {
-    StationID,              /**< Origin station ID field */
-    StationName,            /**< Origin station name field */
-    LineID,                 /**< Line ID field */
-    LineName,               /**< Line name field */
-    DestinationStationID,   /**< Destination station ID field */
-    Distant,                /**< Distance to destination field */
-    InteractionStationID,   /**< Interchange station ID field */
-    InteractionLineID,      /**< Interchange line ID field */
+    StationID, /**< Origin station ID field */
+    StationName, /**< Origin station name field */
+    LineID, /**< Line ID field */
+    LineName, /**< Line name field */
+    DestinationStationID, /**< Destination station ID field */
+    Distant, /**< Distance to destination field */
+    InteractionStationID, /**< Interchange station ID field */
+    InteractionLineID, /**< Interchange line ID field */
 };
 
 #endif //TRABALHO01_RECORD_FIELDS_H

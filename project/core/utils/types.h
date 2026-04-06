@@ -14,7 +14,9 @@
 #define false 0
 
 /** @brief Custom boolean type using unsigned 8-bit integer. */
-typedef uint8_t bool;
+#ifndef bool
+  #define bool uint8_t
+#endif
 typedef const char *String;
 
 #endif //TYPES_H

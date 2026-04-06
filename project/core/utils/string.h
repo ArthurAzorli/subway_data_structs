@@ -29,7 +29,7 @@ static size_t _split_impl(const char *input, const char *token, char **fields[],
 
     while (count < fieldsCount) {
         const char *index = strstr(start, token);
-        const size_t length = index ? (size_t)(index - start) : strlen(start);
+        const size_t length = index ? (size_t) (index - start) : strlen(start);
 
         if (length == 0) {
             *fields[count] = NULL;

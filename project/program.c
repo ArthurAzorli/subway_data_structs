@@ -110,7 +110,7 @@ bool Program_cmpUint32(const uint32_t recordValue, const char *value) {
         // valor não é número válido
         return false;
     }
-    return recordValue == (uint32_t)converted;
+    return recordValue == (uint32_t) converted;
 }
 
 /**
@@ -142,7 +142,7 @@ bool Program_cmpString(const char *recordValue, const char *value) {
  *
  * @param value: Pointer to the character buffer where the input will be stored
  */
-void Program_readIntAsString(char* value) {
+void Program_readIntAsString(char *value) {
     if (scanf("%s", value) != 1) {
         strcpy(value, "");
     }
@@ -162,116 +162,115 @@ void Program_readIntAsString(char* value) {
  */
 bool Program_searchCriteria(const struct DataBase *dataBase) {
     if (dataBase == NULL) return false;
-     bool printedAny = false;
+    bool printedAny = false;
 
     // Reads the number of criteria for the search
-        uint32_t criteriaCount;
-        if (scanf("%u", &criteriaCount) != 1) {
-            throwError("Failed to read criteria count");
+    uint32_t criteriaCount;
+    if (scanf("%u", &criteriaCount) != 1) {
+        throwError("Failed to read criteria count");
+        return false;
+    }
+
+    // Reads the criteria for the search
+    struct SearchCriteria criteria[criteriaCount];
+    for (uint32_t j = 0; j < criteriaCount; j++) {
+        // Reads the search field
+        char field[INPUT_MAX_LENGTH];
+        if (scanf("%s", field) != 1) {
+            throwError("Failed to read search criteria field");
             return false;
         }
 
-    // Reads the criteria for the search
-        struct SearchCriteria criteria[criteriaCount];
+        // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
+        if (strcmp(field, "codEstacao") == 0) {
+            criteria[j].field = StationID;
+            Program_readIntAsString(criteria[j].value);
+        } else if (strcmp(field, "nomeEstacao") == 0) {
+            criteria[j].field = StationName;
+            ScanQuoteString(criteria[j].value);
+        } else if (strcmp(field, "codLinha") == 0) {
+            criteria[j].field = LineID;
+            Program_readIntAsString(criteria[j].value);
+        } else if (strcmp(field, "nomeLinha") == 0) {
+            criteria[j].field = LineName;
+            ScanQuoteString(criteria[j].value);
+        } else if (strcmp(field, "codProxEstacao") == 0) {
+            criteria[j].field = DestinationStationID;
+            Program_readIntAsString(criteria[j].value);
+        } else if (strcmp(field, "distProxEstacao") == 0) {
+            criteria[j].field = Distant;
+            Program_readIntAsString(criteria[j].value);
+        } else if (strcmp(field, "codEstIntegra") == 0) {
+            criteria[j].field = InteractionStationID;
+            Program_readIntAsString(criteria[j].value);
+        } else if (strcmp(field, "codLinhaIntegra") == 0) {
+            criteria[j].field = InteractionLineID;
+            Program_readIntAsString(criteria[j].value);
+        } else {
+            throwError("Invalid search criteria field");
+            return false;
+        }
+    }
+
+    // Iterates through all records in database
+    for (uint32_t rrn = 0; rrn < dataBase->dataHeader->nextInsert; rrn++) {
+        struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
+        if (record == NULL) continue; // removed or invalid
+
+        // Checks each record field present in the search criteria
+        // If any do not match, skip to the next record
+        bool match = true;
         for (uint32_t j = 0; j < criteriaCount; j++) {
-
-            // Reads the search field
-            char field[INPUT_MAX_LENGTH];
-            if (scanf("%s", field) != 1) {
-                throwError("Failed to read search criteria field");
-                return false;
-            }
-
-            // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
-            if (strcmp(field, "codEstacao") == 0) {
-                criteria[j].field = StationID;
-                Program_readIntAsString(criteria[j].value);
-            } else if (strcmp(field, "nomeEstacao") == 0) {
-                criteria[j].field = StationName;
-                ScanQuoteString(criteria[j].value);
-            } else if (strcmp(field, "codLinha") == 0) {
-                criteria[j].field = LineID;
-                Program_readIntAsString(criteria[j].value);
-            } else if (strcmp(field, "nomeLinha") == 0) {
-                criteria[j].field = LineName;
-                ScanQuoteString(criteria[j].value);
-            } else if (strcmp(field, "codProxEstacao") == 0) {
-                criteria[j].field = DestinationStationID;
-                Program_readIntAsString(criteria[j].value);
-            } else if (strcmp(field, "distProxEstacao") == 0) {
-                criteria[j].field = Distant;
-                Program_readIntAsString(criteria[j].value);
-            } else if (strcmp(field, "codEstIntegra") == 0) {
-                criteria[j].field = InteractionStationID;
-                Program_readIntAsString(criteria[j].value);
-            } else if (strcmp(field, "codLinhaIntegra") == 0) {
-                criteria[j].field = InteractionLineID;
-                Program_readIntAsString(criteria[j].value);
-            } else {
-                throwError("Invalid search criteria field");
-                return false;
-            }
-        }
-
-        // Iterates through all records in database
-        for (uint32_t rrn = 0; rrn < dataBase->dataHeader->nextInsert; rrn++) {
-            struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
-            if (record == NULL) continue;  // removed or invalid
-
-            // Checks each record field present in the search criteria
-            // If any do not match, skip to the next record
-            bool match = true;
-            for (uint32_t j = 0; j < criteriaCount; j++) {
-               const String value = criteria[j].value;
-                switch (criteria[j].field) {
-                    case StationID: {
-                        if (!Program_cmpUint32(record->originStationID, value)) match = false;
-                        break;
-                    }
-                    case StationName: {
-                        if (!Program_cmpString(record->stationName, value)) match = false;
-                        break;
-                    }
-                    case LineID: {
-                        if (!Program_cmpUint32(record->originLineID, value)) match = false;
-                        break;
-                    }
-                    case LineName: {
-                        if (!Program_cmpString(record->lineName, value)) match = false;
-                        break;
-                    }
-                    case DestinationStationID: {
-                        if (!Program_cmpUint32(record->destinationStationID, value)) match = false;
-                        break;
-                    }
-                    case Distant: {
-                        if (!Program_cmpUint32(record->destinationDistant, value)) match = false;
-                        break;
-                    }
-                    case InteractionStationID: {
-                        if (!Program_cmpUint32(record->interactionStationID, value)) match = false;
-                        break;
-                    }
-                    case InteractionLineID: {
-                        if (!Program_cmpUint32(record->interactionLineID, value)) match = false;
-                        break;
-                    }
-                    default:
-                        match = false;
-                        break;
+            const String value = criteria[j].value;
+            switch (criteria[j].field) {
+                case StationID: {
+                    if (!Program_cmpUint32(record->originStationID, value)) match = false;
+                    break;
                 }
-
-                if (!match) break;
+                case StationName: {
+                    if (!Program_cmpString(record->stationName, value)) match = false;
+                    break;
+                }
+                case LineID: {
+                    if (!Program_cmpUint32(record->originLineID, value)) match = false;
+                    break;
+                }
+                case LineName: {
+                    if (!Program_cmpString(record->lineName, value)) match = false;
+                    break;
+                }
+                case DestinationStationID: {
+                    if (!Program_cmpUint32(record->destinationStationID, value)) match = false;
+                    break;
+                }
+                case Distant: {
+                    if (!Program_cmpUint32(record->destinationDistant, value)) match = false;
+                    break;
+                }
+                case InteractionStationID: {
+                    if (!Program_cmpUint32(record->interactionStationID, value)) match = false;
+                    break;
+                }
+                case InteractionLineID: {
+                    if (!Program_cmpUint32(record->interactionLineID, value)) match = false;
+                    break;
+                }
+                default:
+                    match = false;
+                    break;
             }
 
-            // If a record is found, print it
-            if (match) {
-                Program_printRecord(record);
-                printedAny = true;
-            }
-
-            SubwayRecord_free(record);
+            if (!match) break;
         }
+
+        // If a record is found, print it
+        if (match) {
+            Program_printRecord(record);
+            printedAny = true;
+        }
+
+        SubwayRecord_free(record);
+    }
 
     // If there are no records founded, print message
     if (!printedAny) printf("Registro inexistente.\n");
@@ -342,7 +341,7 @@ bool Program_showRecords() {
     }
 
     // Initialize database
-    struct DataBase* dataBase = DataBaseRepository_init(filePath);
+    struct DataBase *dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
@@ -352,7 +351,7 @@ bool Program_showRecords() {
     bool printedRecord = false;
     for (int i = 0; i < dataBase->dataHeader->nextInsert; i++) {
         struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, i);
-        if (record == NULL) continue;  // removed or invalid
+        if (record == NULL) continue; // removed or invalid
         Program_printRecord(record);
         printedRecord = true;
         SubwayRecord_free(record);
@@ -390,7 +389,7 @@ bool Program_searchRecord() {
     if (searchesCount == 0) return true;
 
     // Initializes the database
-    struct DataBase* dataBase = DataBaseRepository_init(filePath);
+    struct DataBase *dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
@@ -425,7 +424,7 @@ bool Program_getRecordByRRN() {
     }
 
     // Initialize database
-    struct DataBase* dataBase = DataBaseRepository_init(filePath);
+    struct DataBase *dataBase = DataBaseRepository_init(filePath);
     if (dataBase == NULL) {
         throwError("Failed to initialize data base");
         return false;
@@ -433,7 +432,8 @@ bool Program_getRecordByRRN() {
 
     // Read the record and print it if found, otherwise say record does not exist
     struct SubwayRecord *record = DataBaseRepository_readRecord(dataBase, rrn);
-    if (record == NULL) {  // removed or invalid
+    if (record == NULL) {
+        // removed or invalid
         printf("Registro inexistente.\n");
     } else {
         Program_printRecord(record);

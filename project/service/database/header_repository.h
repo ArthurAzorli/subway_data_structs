@@ -17,10 +17,10 @@
  * @brief Metadata header for the database file.
  */
 struct DataHeader {
-    uint32_t nextInsert;           /**< RRN (Relative Record Number) for the next new record insertion */
-    uint32_t lastRemoved;          /**< RRN of the most recently removed record (for reuse chain) */
-    uint32_t stationsCount;        /**< Total count of unique station names in database */
-    uint32_t pairStationsCount;    /**< Total count of unique station pairs (routes) in database */
+    uint32_t nextInsert; /**< RRN (Relative Record Number) for the next new record insertion */
+    uint32_t lastRemoved; /**< RRN of the most recently removed record (for reuse chain) */
+    uint32_t stationsCount; /**< Total count of unique station names in database */
+    uint32_t pairStationsCount; /**< Total count of unique station pairs (routes) in database */
 };
 
 struct DataHeader *HeaderRepository_init(struct DataFile *dataFile);

@@ -1,5 +1,6 @@
 #ifndef FILE_REPOSITORY_H
 #define FILE_REPOSITORY_H
+#include <stddef.h>
 #include "../utils/types.h"
 
 /** @brief Size in bytes for an unsigned 8-bit integer. */

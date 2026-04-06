@@ -248,10 +248,12 @@ bool DataBaseRepository_createRecord(const struct DataBase *dataBase, struct Sub
 
     // Check header modifications
     if (!reuse) dataBase->dataHeader->nextInsert++;
-    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 1) dataBase->
-            dataHeader->stationsCount++;
-    if (record->destinationStationID != EMPTY && DatabaseRepository_countStationsPairs(dataBase, record) == 1) dataBase
-            ->dataHeader->pairStationsCount++;
+    if (DataBaseRepository_countStation(dataBase, record->stationNameLength, record->stationName) == 1)
+        dataBase->
+                dataHeader->stationsCount++;
+    if (record->destinationStationID != EMPTY && DatabaseRepository_countStationsPairs(dataBase, record) == 1)
+        dataBase
+                ->dataHeader->pairStationsCount++;
 
     // Save the header
     if (!HeaderRepository_save(dataBase->dataHeader, dataBase->dataFile)) {
