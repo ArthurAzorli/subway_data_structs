@@ -402,6 +402,7 @@ bool Program_searchRecord() {
             DataBaseRepository_close(dataBase);
             return false;
         }
+        if (i < searchesCount - 1) printf("\n");
     }
 
     // Finalizes procedure

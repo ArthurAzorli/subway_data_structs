@@ -2,7 +2,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
 LIBS = -lmd
-
 INCLUDES = -I.
 
 # Source files (list explicitly)
@@ -21,20 +20,22 @@ OBJ = $(SRC:.c=.o)
 # Output binary
 TARGET = programaTrab
 
-.PHONY: all run clean
+.PHONY: all run clean build
 
 # Default rule: compile the program
-all: $(TARGET)
+all:
+	gcc $(INCLUDES) -o $(TARGET) $(SRC)
+
+run:
+	./$(TARGET)
+
+build: $(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-
-# Run the program
-run:
-	./$(TARGET)
 
 # Clean build artifacts
 clean:
