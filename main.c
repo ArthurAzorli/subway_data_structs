@@ -1,11 +1,13 @@
-// Arthur Gagliardi Azorli - 16855452
-// Nícolas Silva Scorza - 17025079
-
 /**
- * @brief Application entry point and main event loop.
+ * SCC0503 - Algoritmos e Estruturas de Dados II
+ * Trabalho Prático 1 - Sistema de Arquivos Binários de Metrô/CPTM
+ * ICMC - Instituto de Ciências Matemáticas e de Computação - USP São Carlos
  *
- * Initializes tests if configured, displays user menu, and handles user
- * selections to invoke various program operations.
+ * Repositório Github: https://github.com/ArthurAzorli/subway_data_structs;
+ *
+ * GRUPO 24
+ * @author Arthur Gagliardi Azorli - 16855452
+ * @author Nícolas Silva Scorza - 17025079
  */
 
 #include <stdio.h>
@@ -73,18 +75,13 @@ void showMenu() {
 #endif
 }
 
+/**
+ * @brief Print an error message
+ */
 void printMessageError() {
     printf("Falha no processamento do arquivo.\n");
 }
 
-/**
- * @brief Main entry point for the subway database application.
- *
- * Runs configured unit tests, displays the main menu, and processes user
- * commands in a loop until the user chooses to exit.
- *
- * @return EXIT_SUCCESS (0) on successful completion, non-zero on error
- */
 int main() {
     runTests();
     int option;
@@ -96,31 +93,19 @@ int main() {
         }
         switch (option) {
             case 1: {
-                if (!Program_readFromFile()) {
-                    printMessageError();
-                    return 0;
-                }
+                if (!Program_readFromFile()) printMessageError();
                 break;
             }
             case 2: {
-                if (!Program_showRecords()) {
-                    printMessageError();
-                    return 0;
-                }
+                if (!Program_showRecords()) printMessageError();
                 break;
             }
             case 3: {
-                if (!Program_searchRecord()) {
-                    printMessageError();
-                    return 0;
-                }
+                if (!Program_searchRecord()) printMessageError();
                 break;
             }
             case 4: {
-                if (!Program_getRecordByRRN()) {
-                    printMessageError();
-                    return 0;
-                }
+                if (!Program_getRecordByRRN()) printMessageError();
                 break;
             }
             case 0:
