@@ -9,7 +9,9 @@
 /** @brief Special value representing an empty or uninitialized state. */
 #define EMPTY 0xFFFFFFFF
 
-#define true 1
-#define false 0
+#define trueChar '1'
+#define falseChar '0'
+
+typedef const char *String;
 
 #endif //TYPES_H

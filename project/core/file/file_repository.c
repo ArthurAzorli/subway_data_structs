@@ -53,6 +53,7 @@ bool FileRepository_isDataFileValid(const struct DataFile *dataFile) {
  */
 bool FileRepository_goToAbsolute(struct DataFile *dataFile, const long absOffset) {
     if (!FileRepository_isDataFileValid(dataFile)) return false;
+    if (dataFile->byteOffset == absOffset) return true;
     if (fseek(dataFile->file, absOffset, SEEK_SET) != 0) {
         throwError("Failed to reposition cursor");
         return false;
@@ -314,6 +315,7 @@ bool FileRepository_move(struct DataFile *dataFile, const long movement) {
         throwError("Invalid ByteOffset access");
         return false;
     }
+    if (movement == 0) return true;
     if (fseek(dataFile->file, movement, SEEK_CUR) != 0) {
         throwError("Failed to reposition cursor");
         return false;

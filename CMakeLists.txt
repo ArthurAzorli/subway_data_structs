@@ -23,4 +23,9 @@ add_executable(Trabalho01
         project/lib/provided.c
         project/program.h
         project/program.c
-        main.c)
+        main.c
+        project/services/file/file_repository.c
+        project/services/file/file_repository.h
+        project/services/utils.h
+        project/subway/header/subway_header_repository.c
+        project/subway/header/subway_header_repository.h)
