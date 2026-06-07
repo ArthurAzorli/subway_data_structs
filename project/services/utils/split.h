@@ -1,10 +1,6 @@
-/**
- * @file string.h
- * @brief String manipulation utilities for parsing and splitting strings.
- */
 
-#ifndef TRABALHO01_STRING_H
-#define TRABALHO01_STRING_H
+#ifndef TRABALHO01_SPLIT_H
+#define TRABALHO01_SPLIT_H
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,4 +61,4 @@ static size_t _split_impl(const char *input, const char *token, char **fields[],
 #define split(input, token, ...) \
 _split_impl((input), (token), (char**[]){__VA_ARGS__}, sizeof((char**[]){__VA_ARGS__})/sizeof(char**))
 
-#endif //TRABALHO01_STRING_H
+#endif //TRABALHO01_SPLIT_H

@@ -1,19 +1,14 @@
-/**
- * @file record_fields.h
- * @brief Defines the enumeration of subway record field identifiers.
- */
-
-#ifndef TRABALHO01_RECORD_FIELDS_H
-#define TRABALHO01_RECORD_FIELDS_H
+#ifndef SEARCH_CRITERIA_H
+#define SEARCH_CRITERIA_H
 
 /**
- * @enum RecordFields
+ * @enum SubwayRecordFields
  * @brief Enumeration of all searchable and comparable fields in a subway record.
  *
  * These fields represent the individual components of a SubwayRecord that can be used
  * for searching, filtering, and comparison operations.
  */
-enum RecordFields {
+enum SubwayRecordFields {
     StationID, /**< Origin station ID field */
     StationName, /**< Origin station name field */
     LineID, /**< Line ID field */
@@ -24,4 +19,17 @@ enum RecordFields {
     InteractionLineID, /**< Interchange line ID field */
 };
 
-#endif //TRABALHO01_RECORD_FIELDS_H
+/**
+ * @struct SearchCriteria
+ * @brief Represents a single search criterion for filtering subway records.
+ *
+ * This structure encapsulates a field identifier and a corresponding value that can be used
+ * to search, filter, or compare subway records based on specific attributes.
+ */
+struct SearchCriteria {
+    enum SubwayRecordFields field; /**< The specific field of the record to compare against */
+    char value[101]; /**< The value to compare the record's field against (as a string) */
+};
+
+
+#endif //SEARCH_CRITERIA_H

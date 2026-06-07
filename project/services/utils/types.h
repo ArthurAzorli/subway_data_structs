@@ -7,11 +7,10 @@
 #define TYPES_H
 
 /** @brief Special value representing an empty or uninitialized state. */
+#ifndef EMPTY
 #define EMPTY 0xFFFFFFFF
-
-#define trueChar '1'
-#define falseChar '0'
+#endif
 
 typedef const char *String;
 
-#endif //TYPES_H
+#endif

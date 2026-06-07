@@ -1,14 +1,10 @@
-/**
- * @file subway_record.h
- * @brief Data structure and operations for subway station records.
- */
 
-#ifndef SUBWAY_LINE_RECORD_H
-#define SUBWAY_LINE_RECORD_H
-
+#ifndef RECORD_REPOSITORY_H
+#define RECORD_REPOSITORY_H
+#include "../services/file/file_repository.h"
+#include <stdbool.h>
 #include <stdint.h>
-#include <stddef.h>
-#include "../core/utils/types.h"
+
 
 /**
  * @struct SubwayRecord
@@ -30,8 +26,15 @@ struct SubwayRecord {
 
 struct SubwayRecord *SubwayRecord_init();
 
-bool SubwayRecord_isEquals(const struct SubwayRecord *thisRecord, const struct SubwayRecord *otherRecord);
-
 void SubwayRecord_free(struct SubwayRecord *record);
 
-#endif //SUBWAY_LINE_RECORD_H
+struct SubwayRecord *SubwayRecordRepository_readRecord(struct DataFile *dataFile);
+
+bool SubwayRecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord *record);
+
+bool SubwayRecordRepository_removeRecord(struct DataFile *dataFile, uint32_t lastRemoved);
+
+bool SubwayRecordRepository_readNextRemoved(struct DataFile *dataFile, uint32_t *nextRemoved);
+
+
+#endif //RECORD_REPOSITORY_H

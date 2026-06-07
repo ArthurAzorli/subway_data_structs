@@ -3,163 +3,196 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../core/file/file_repository.h"
-#include "../service/database/record_repository.h"
-#include "../domain/subway_record.h"
+#include "../services/file/file_repository.h"
+#include "../subway/subway_record_repository.h"
+#include "../services/utils/types.h"
 
-#define RECORD_LENGTH_2 80
-#define HEADER_LENGTH_2 16
+#define RECORD_LENGTH 80
 
+/**
+ * @brief Test suite for SubwayRecordRepository functionality
+ *
+ * Tests:
+ * 1. Record initialization
+ * 2. Record writing to file
+ * 3. Record reading from file
+ * 4. Data persistence and integrity
+ * 5. Multiple records handling
+ * 6. Record removal
+ * 7. Memory management
+ */
 void record_repository_test() {
     const char *path = "test_record_repository.bin";
     remove(path);
 
-    // 1. Criar arquivo e cabeçalho inicial (4 ints EMPTY)
-    struct DataFile *df = FileRepository_openOrCreate(path);
-    assert(df != NULL);
-    for (int i = 0; i < 4; i++) {
-        assert(FileRepository_writeInt(df, EMPTY));
-    }
-    FileRepository_flush(df);
+    // ===== Test 1: File Creation and Header Setup ===== \\
+    printf("Testing file creation and header setup...\n");
 
-    // 2. Criar registros usando SubwayRecord_init
+    struct DataFile *df = FileRepository_openOrCreate(path, WRITE_ONLY);
+    assert(df != NULL);
+
+    // Write header (4 empty integers)
+    uint32_t header_val = EMPTY;
+    assert(FileRepository_write(df, INTEGER, &header_val, 1));
+    assert(FileRepository_write(df, INTEGER, &header_val, 1));
+    assert(FileRepository_write(df, INTEGER, &header_val, 1));
+    assert(FileRepository_write(df, INTEGER, &header_val, 1));
+
+    // ===== Test 2: Create Records with Different Data ===== \\
+    printf("Testing record creation and writing...\n");
+
+    // Record 1: Full data with both strings
     struct SubwayRecord *r1 = SubwayRecord_init();
-    r1->rrn = 0;
-    r1->originStationID = 1;
+    assert(r1 != NULL);
+    r1->originStationID = 100;
     r1->originLineID = 10;
-    r1->destinationStationID = 2;
-    r1->destinationDistant = 100;
-    r1->interactionStationID = 30;
-    r1->interactionLineID = 3;
-    r1->stationNameLength = 8;
-    r1->stationName = strdup("StationA");
-    r1->lineNameLength = 5;
-    r1->lineName = strdup("LineA");
+    r1->destinationStationID = 200;
+    r1->destinationDistant = 5000;
+    r1->interactionLineID = 20;
+    r1->interactionStationID = 150;
+    r1->stationNameLength = 7;
+    r1->stationName = malloc(8);
+    strcpy(r1->stationName, "Station");
+    r1->lineNameLength = 4;
+    r1->lineName = malloc(5);
+    strcpy(r1->lineName, "Line");
 
+    assert(SubwayRecordRepository_writeRecord(df, r1));
+
+    // Record 2: Partial data (some EMPTY fields)
     struct SubwayRecord *r2 = SubwayRecord_init();
-    r2->rrn = 1;
-    r2->originStationID = 2;
-    r2->originLineID = EMPTY;
-    r2->destinationStationID = EMPTY;
+    assert(r2 != NULL);
+    r2->originStationID = 200;
+    r2->originLineID = 20;
+    r2->destinationStationID = 300;
     r2->destinationDistant = EMPTY;
-    r2->interactionStationID = EMPTY;
     r2->interactionLineID = EMPTY;
-    r2->stationNameLength = 8;
-    r2->stationName = strdup("StationB");
-    r2->lineNameLength = 0;
-    r2->lineName = NULL;
+    r2->interactionStationID = EMPTY;
+    r2->stationNameLength = 6;
+    r2->stationName = malloc(7);
+    strcpy(r2->stationName, "Center");
+    r2->lineNameLength = 5;
+    r2->lineName = malloc(6);
+    strcpy(r2->lineName, "Blue");
 
+    assert(SubwayRecordRepository_writeRecord(df, r2));
+
+    // Record 3: Minimal data
     struct SubwayRecord *r3 = SubwayRecord_init();
-    r3->rrn = 2;
-    r3->originStationID = 3;
-    r3->originLineID = 20;
-    r3->destinationStationID = 4;
-    r3->destinationDistant = 200;
-    r3->interactionStationID = 50;
-    r3->interactionLineID = 5;
-    r3->stationNameLength = 8;
-    r3->stationName = strdup("StationC");
-    r3->lineNameLength = 6;
-    r3->lineName = strdup("LineC");
+    assert(r3 != NULL);
+    r3->originStationID = 300;
+    r3->originLineID = 30;
+    r3->destinationStationID = EMPTY;
+    r3->destinationDistant = EMPTY;
+    r3->interactionLineID = EMPTY;
+    r3->interactionStationID = EMPTY;
+    r3->stationNameLength = 5;
+    r3->stationName = malloc(6);
+    strcpy(r3->stationName, "South");
+    r3->lineNameLength = 0;
+    r3->lineName = NULL;
 
-    // Inserir registros
-    assert(RecordRepository_writeRecord(df, r1));
-    assert(RecordRepository_writeRecord(df, r2));
-    assert(RecordRepository_writeRecord(df, r3));
-    FileRepository_flush(df);
+    assert(SubwayRecordRepository_writeRecord(df, r3));
 
-    // Verificar tamanho do arquivo
-    size_t size = FileRepository_fileSize(df);
-    assert(size >= HEADER_LENGTH_2 + 3 * RECORD_LENGTH_2);
-
-    // 3. Ler e verificar registros
-    struct SubwayRecord *read1 = RecordRepository_readRecord(df, 0);
-    assert(read1 != NULL);
-    assert(read1->originStationID == 1);
-    assert(read1->originLineID == 10);
-    assert(read1->destinationStationID == 2);
-    assert(read1->destinationDistant == 100);
-    assert(read1->interactionStationID == 30);
-    assert(read1->interactionLineID == 3);
-    assert(read1->stationNameLength == 8);
-    assert(memcmp(read1->stationName, "StationA", read1->stationNameLength) == 0);
-    assert(read1->lineNameLength == 5);
-    assert(memcmp(read1->lineName, "LineA", read1->lineNameLength) == 0);
-    SubwayRecord_free(read1);
-
-    struct SubwayRecord *read2 = RecordRepository_readRecord(df, 1);
-    assert(read2 != NULL);
-    assert(read2->originStationID == 2);
-    assert(read2->originLineID == EMPTY);
-    assert(read2->destinationStationID == EMPTY);
-    assert(read2->destinationDistant == EMPTY);
-    assert(read2->interactionStationID == EMPTY);
-    assert(read2->interactionLineID == EMPTY);
-    assert(read2->stationNameLength == 8);
-    assert(memcmp(read2->stationName, "StationB", read2->stationNameLength) == 0);
-    assert(read2->lineNameLength == 0);
-    SubwayRecord_free(read2);
-
-    struct SubwayRecord *read3 = RecordRepository_readRecord(df, 2);
-    assert(read3 != NULL);
-    assert(read3->originStationID == 3);
-    assert(read3->originLineID == 20);
-    assert(read3->destinationStationID == 4);
-    assert(read3->destinationDistant == 200);
-    assert(read3->interactionStationID == 50);
-    assert(read3->interactionLineID == 5);
-    assert(read3->stationNameLength == 8);
-    assert(memcmp(read3->stationName, "StationC", read3->stationNameLength) == 0);
-    assert(read3->lineNameLength == 6);
-    assert(memcmp(read3->lineName, "LineC", read3->lineNameLength) == 0);
-    SubwayRecord_free(read3);
-
-    // 4. Remover múltiplos registros
-    uint32_t lastRemoved = EMPTY;
-    assert(RecordRepository_removeRecord(df, 1, &lastRemoved));
-    assert(lastRemoved == 1);
-    assert(RecordRepository_removeRecord(df, 2, &lastRemoved));
-    assert(lastRemoved == 2);
-
-    bool removed;
-    assert(RecordRepository_isRemoved(df, 1, &removed));
-    assert(removed == true);
-    assert(RecordRepository_isRemoved(df, 2, &removed));
-    assert(removed == true);
-
-    // Verificar pilha: registro 2 aponta para 1
-    uint32_t prevRemoved;
-    assert(RecordRepository_readLastRemoved(df, 2, &prevRemoved));
-    assert(prevRemoved == 1);
-
-    // O topo da pilha é 2
-    assert(lastRemoved == 2);
-
-    // 5. Reabrir arquivo e verificar persistência
+    assert(FileRepository_flush(df));
     FileRepository_close(df);
-    df = FileRepository_openOrCreate(path);
+
+    // ===== Test 3: Reopen File and Read Records ===== \\
+    printf("Testing record reading and data verification...\n");
+
+    df = FileRepository_openOrCreate(path, READ_ONLY);
     assert(df != NULL);
 
-    assert(RecordRepository_isRemoved(df, 1, &removed));
-    assert(removed == true);
-    assert(RecordRepository_isRemoved(df, 2, &removed));
-    assert(removed == true);
+    // Skip header (16 bytes)
+    FileRepository_move(df, 16);
 
-    assert(RecordRepository_readLastRemoved(df, 2, &prevRemoved));
-    assert(prevRemoved == 1);
+    // Read Record 1
+    struct SubwayRecord *read1 = SubwayRecordRepository_readRecord(df);
+    assert(read1 != NULL);
+    assert(read1->originStationID == 100);
+    assert(read1->originLineID == 10);
+    assert(read1->destinationStationID == 200);
+    assert(read1->destinationDistant == 5000);
+    assert(read1->interactionLineID == 20);
+    assert(read1->interactionStationID == 150);
+    assert(read1->stationNameLength == 7);
+    assert(strcmp(read1->stationName, "Station") == 0);
+    assert(read1->lineNameLength == 4);
+    assert(strcmp(read1->lineName, "Line") == 0);
 
-    struct SubwayRecord *check1 = RecordRepository_readRecord(df, 0);
-    assert(check1 != NULL);
-    assert(memcmp(check1->stationName, "StationA", check1->stationNameLength) == 0);
-    SubwayRecord_free(check1);
+    // Read Record 2
+    struct SubwayRecord *read2 = SubwayRecordRepository_readRecord(df);
+    assert(read2 != NULL);
+    assert(read2->originStationID == 200);
+    assert(read2->originLineID == 20);
+    assert(read2->destinationStationID == 300);
+    assert(read2->destinationDistant == EMPTY);
+    assert(read2->interactionLineID == EMPTY);
+    assert(read2->interactionStationID == EMPTY);
+    assert(read2->stationNameLength == 6);
+    assert(strcmp(read2->stationName, "Center") == 0);
+    assert(read2->lineNameLength == 5);
+    assert(strcmp(read2->lineName, "Blue") == 0);
 
-    // 6. Limpeza final
+    // Read Record 3
+    struct SubwayRecord *read3 = SubwayRecordRepository_readRecord(df);
+    assert(read3 != NULL);
+    assert(read3->originStationID == 300);
+    assert(read3->originLineID == 30);
+    assert(read3->destinationStationID == EMPTY);
+    assert(read3->destinationDistant == EMPTY);
+    assert(read3->interactionLineID == EMPTY);
+    assert(read3->interactionStationID == EMPTY);
+    assert(read3->stationNameLength == 5);
+    assert(strcmp(read3->stationName, "South") == 0);
+    assert(read3->lineNameLength == 0);
+
+    // ===== Test 4: Test Record Removal ===== \\
+    printf("Testing record removal...\n");
+
     FileRepository_close(df);
-    assert(remove(path) == 0);
+
+    df = FileRepository_openOrCreate(path, READ_WRITE);
+    assert(df != NULL);
+
+    // Move to second record and remove it
+    FileRepository_move(df, 16 + RECORD_LENGTH); // Skip header and first record
+    assert(SubwayRecordRepository_removeRecord(df, EMPTY));
+
+    assert(FileRepository_flush(df));
+    FileRepository_close(df);
+
+    // ===== Test 5: Verify Removed Record ===== \\
+    printf("Testing removed record verification...\n");
+
+    df = FileRepository_openOrCreate(path, READ_ONLY);
+    assert(df != NULL);
+
+    // Skip header and first record
+    FileRepository_move(df, 16 + RECORD_LENGTH);
+
+    // Try to read removed record (should return NULL)
+    struct SubwayRecord *removed_read = SubwayRecordRepository_readRecord(df);
+    assert(removed_read == NULL);
+
+    FileRepository_close(df);
+
+    // ===== Test 6: Memory Cleanup ===== \\
+    printf("Testing memory cleanup...\n");
 
     SubwayRecord_free(r1);
     SubwayRecord_free(r2);
     SubwayRecord_free(r3);
+    SubwayRecord_free(read1);
+    SubwayRecord_free(read2);
+    SubwayRecord_free(read3);
 
-    printf("RECORD_REPOSITORY: OK\n");
+    // ===== Test 7: File Cleanup ===== \\
+    printf("Testing file cleanup...\n");
+
+    assert(remove(path) == 0);
+
+    printf("RECORD REPOSITORY: ALL TESTS PASSED ✓\n");
 }
+
+

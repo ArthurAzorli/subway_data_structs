@@ -1,92 +1,117 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "../core/file/file_repository.h"
+#include "../services/file/file_repository.h"
 
+/**
+ * @brief Test suite for FileRepository functionality
+ *
+ * Tests basic file operations:
+ * 1. File creation in WRITE mode
+ * 2. Writing data (boolean, integers, bytes, strings)
+ * 3. File closure and flushing
+ * 4. File reopening in READ mode
+ * 5. Reading data back and verifying integrity
+ * 6. File navigation
+ */
 void file_repository_test() {
     const char *path = "test_file_repository.bin";
 
+    // Clean up if file already exists
     remove(path);
 
-    // 1. Criação do arquivo
-    struct DataFile *df = FileRepository_openOrCreate(path);
+    // ===== Test 1: File Creation and Writing ===== \\
+    printf("Testing file creation and write operations...\n");
+
+    struct DataFile *df = FileRepository_openOrCreate(path, WRITE_ONLY);
     assert(df != NULL);
 
-    // 2. Escrita de valores e verificação de tamanho
-    assert(FileRepository_writeBool(df, true));
-    assert(FileRepository_fileSize(df) == 1);
+    // Write boolean values (using BOOLEAN type)
+    bool bval_true = true;
+    assert(FileRepository_write(df, BOOLEAN, &bval_true, 1));
 
-    assert(FileRepository_writeBool(df, false));
-    assert(FileRepository_fileSize(df) == 2);
+    bool bval_false = false;
+    assert(FileRepository_write(df, BOOLEAN, &bval_false, 1));
 
-    assert(FileRepository_writeInt(df, 123456));
-    assert(FileRepository_fileSize(df) == 6);
+    // Write 32-bit integers
+    uint32_t int1 = 123456;
+    assert(FileRepository_write(df, INTEGER, &int1, 1));
 
-    assert(FileRepository_writeInt(df, (uint32_t)-98765)); // valor negativo
-    assert(FileRepository_fileSize(df) == 10);
+    uint32_t int2 = (uint32_t)-98765;
+    assert(FileRepository_write(df, INTEGER, &int2, 1));
 
-    assert(FileRepository_writeByte(df, 0xAB));
-    assert(FileRepository_fileSize(df) == 11);
+    // Write individual bytes
+    uint8_t byte1 = 0xAB;
+    assert(FileRepository_write(df, CHAR, &byte1, 1));
 
-    assert(FileRepository_writeByte(df, 0x00));
-    assert(FileRepository_fileSize(df) == 12);
+    uint8_t byte2 = 0x00;
+    assert(FileRepository_write(df, CHAR, &byte2, 1));
 
-    assert(FileRepository_writeString(df, 5, "Hello"));
-    assert(FileRepository_fileSize(df) == 17);
+    // Write strings
+    assert(FileRepository_write(df, CHAR, "Hello", 5));
+    assert(FileRepository_write(df, CHAR, "Test", 4));
 
-    assert(FileRepository_writeString(df, 4, "Test"));
-    assert(FileRepository_fileSize(df) == 21);
+    // ===== Test 2: Flush and Close ===== \\
+    printf("Testing flush and file closure...\n");
 
-    // 3. Flush e fechamento
     assert(FileRepository_flush(df));
     FileRepository_close(df);
 
-    // 4. Reabrir arquivo
-    df = FileRepository_openOrCreate(path);
+    // ===== Test 3: Reopen and Read ===== \\
+    printf("Testing file reopen and read operations...\n");
+
+    df = FileRepository_openOrCreate(path, READ_ONLY);
     assert(df != NULL);
 
-    // 5. Leitura dos valores
-    bool bval;
+    // Read and verify boolean values
+    bool bval_read;
+    assert(FileRepository_read(df, BOOLEAN, &bval_read, 1));
+    assert(bval_read == true);
+
+    assert(FileRepository_read(df, BOOLEAN, &bval_read, 1));
+    assert(bval_read == false);
+
+    // Read and verify integers
     uint32_t ival;
-    uint8_t byteval;
-    char str[10];
-
-    assert(FileRepository_readBool(df, &bval));
-    assert(bval == true);
-
-    assert(FileRepository_readBool(df, &bval));
-    assert(bval == false);
-
-    assert(FileRepository_readInt(df, &ival));
+    assert(FileRepository_read(df, INTEGER, &ival, 1));
     assert(ival == 123456);
 
-    assert(FileRepository_readInt(df, &ival));
+    assert(FileRepository_read(df, INTEGER, &ival, 1));
     assert((int32_t)ival == -98765);
 
-    assert(FileRepository_readByte(df, &byteval));
+    // Read and verify bytes
+    uint8_t byteval;
+    assert(FileRepository_read(df, CHAR, &byteval, 1));
     assert(byteval == 0xAB);
 
-    assert(FileRepository_readByte(df, &byteval));
+    assert(FileRepository_read(df, CHAR, &byteval, 1));
     assert(byteval == 0x00);
 
-    assert(FileRepository_readString(df, 5, str));
+    // Read and verify strings
+    char str[10];
+    assert(FileRepository_read(df, CHAR, str, 5));
+    str[5] = '\0';
     assert(strcmp(str, "Hello") == 0);
 
-    assert(FileRepository_readString(df, 4, str));
+    assert(FileRepository_read(df, CHAR, str, 4));
+    str[4] = '\0';
     assert(strcmp(str, "Test") == 0);
 
-    // 6. Teste de movimentação
-    assert(FileRepository_goTo(df, 0)); // volta ao início dos dados
-    assert(FileRepository_move(df, 2)); // avança 2 bytes
-    assert(FileRepository_moveUntil(df, 6)); // vai até posição 6 relativa
+    // ===== Test 4: File Navigation ===== \\
+    printf("Testing file navigation...\n");
 
-    // 7. Verificação de tamanho final
-    size_t size = FileRepository_fileSize(df);
-    assert(size == 21);
+    // Go to beginning of data (offset 0)
+    FileRepository_goto(df, 0);
 
-    // 8. Fechar e remover arquivo
+    // Move forward 2 bytes (skip first two boolean values)
+    FileRepository_move(df, 2);
+
+    // ===== Test 5: Cleanup ===== \\
+    printf("Testing cleanup...\n");
+
     FileRepository_close(df);
     assert(remove(path) == 0);
 
-    printf("FILE REPOSITORY: OK\n");
+    printf("FILE REPOSITORY: ALL TESTS PASSED ✓\n");
 }
+

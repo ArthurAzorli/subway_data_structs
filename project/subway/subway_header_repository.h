@@ -1,10 +1,10 @@
 #ifndef SUBWAY_HEADER_REPOSITORY_H
 #define SUBWAY_HEADER_REPOSITORY_H
+#include "../services/file/file_repository.h"
 #include <stdbool.h>
 #include <stdint.h>
-
 /**
- * @struct DataHeader
+ * @struct DataSubwayHeader
  * @brief Metadata header for the database file.
  */
 struct DataSubwayHeader {
@@ -14,8 +14,10 @@ struct DataSubwayHeader {
     uint32_t pairStationsCount; /**< Total count of unique station pairs (routes) in database */
 };
 
-struct DataSubwayHeader *SubwayHeaderRepository_init(struct DataFile *dataFile);
+struct DataSubwayHeader *SubwayHeaderRepository_init();
 
-bool SubwayHeaderRepository_save(const struct DataSubwayHeader *header, struct DataFile *dataFile);
+struct DataSubwayHeader *SubwayHeaderRepository_read(struct DataFile *dataFile);
+
+bool SubwayHeaderRepository_write(const struct DataSubwayHeader *header, struct DataFile *dataFile);
 
 #endif //SUBWAY_HEADER_REPOSITORY_H

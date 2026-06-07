@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "../service/input/input_repository.h"
+#include "../subway/input/input_repository.h"
 
 void input_repository_test() {
     const char *path = "test_input_repository.csv";

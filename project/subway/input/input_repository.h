@@ -10,8 +10,8 @@
 #ifndef TRABALHO01_INPUT_REPOSITORY_H
 #define TRABALHO01_INPUT_REPOSITORY_H
 
-#include  "../../domain/subway_record.h"
-#include "../../core/utils/types.h"
+#include "../subway_record_repository.h"
+#include "../../services/utils/types.h"
 
 struct InputFile;
 

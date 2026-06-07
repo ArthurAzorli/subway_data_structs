@@ -18,17 +18,11 @@ struct DataFile;
 
 struct DataFile* FileRepository_openOrCreate(const char path[], enum FileMode mode);
 
-size_t FileRepository_fileSize(const struct DataFile* file);
+void FileRepository_move(struct DataFile* file, long movement);
 
-bool FileRepository_move(struct DataFile* file, long movement);
-
-bool FileRepository_goto(struct DataFile* file, long byteOffset);
-
-bool FileRepository_write(struct DataFile* file, enum DataType type, const void *buffer);
+void FileRepository_goto(struct DataFile* file, long byteOffset);
 
 bool FileRepository_write(struct DataFile* file, enum DataType type, const void *buffer, size_t count);
-
-bool FileRepository_read(struct DataFile* file, enum DataType type, void *buffer);
 
 bool FileRepository_read(struct DataFile* file, enum DataType type, void *buffer, size_t count);
 

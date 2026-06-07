@@ -1,11 +1,11 @@
 #include "input_repository.h"
 
+#include "../../services/utils/split.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../utils/string.h"
-
+#include <string.h>
 
 
 #define LINE_MAX_LENGTH 1024

@@ -8,10 +8,9 @@
 
 #ifndef TRABALHO01_PROGRAM_H
 #define TRABALHO01_PROGRAM_H
+#include <stdbool.h>
 
-#include "core/utils/types.h"
-
-bool Program_readFromFile();
+bool Program_initSubwayFile();
 
 bool Program_showRecords();
 
