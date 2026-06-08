@@ -26,13 +26,13 @@
 struct DataFile {
     FILE *file; /**< Pointer to the underlying FILE object */
     enum FileMode mode; /**< The mode in which the file was opened (writeOnly, readOnly, readWrite) */
-    bool edited; /**< true if file is currently in edit mode, false otherwise */
+    bool consistent; /**< true if file is currently in edit mode, false otherwise */
     long byteOffset; /**< Current byte offset within the file */
 };
 
 bool FileRepository_setConsistent(struct DataFile *dataFile, const bool consistent) {
     //se o estado for diferente ou ainda não está escrito, setta a consistencia
-    if (dataFile->edited == consistent) return true;
+    if (dataFile->consistent == consistent) return true;
 
     //guarda a posição atual e vai para a posição do valor da consistencia, se precisar
     const long byteOffsetInitial = dataFile->byteOffset;
@@ -41,7 +41,7 @@ bool FileRepository_setConsistent(struct DataFile *dataFile, const bool consiste
     //escreve o novo valor de consitencia
     const char consistentMark = consistent ? CONSISTENT_MARK : INCONSISTENT_MARK;
     if (fwrite(&consistentMark, UINT8_BYTES_COUNT, 1, dataFile->file) != 1) return false;
-    dataFile->edited = consistent;
+    dataFile->consistent = consistent;
 
     //volta para a posição inicial, se precisar
     if (byteOffsetInitial > 1) fseek(dataFile->file, byteOffsetInitial, SEEK_SET);
@@ -53,7 +53,7 @@ struct DataFile *FileRepository_openOrCreate(const char path[], const enum FileM
     if (!dataFile) return NULL;
 
     //init fields
-    dataFile->edited = false;
+    dataFile->consistent = true;
     dataFile->mode = mode;
 
     //define open/create file strategy
@@ -82,6 +82,7 @@ struct DataFile *FileRepository_openOrCreate(const char path[], const enum FileM
             return NULL;
         }
         dataFile->byteOffset = 1;
+
     }
     return dataFile;
 }
@@ -103,7 +104,6 @@ void FileRepository_goto(struct DataFile *file, const long byteOffset) {
 }
 
 bool FileRepository_write(struct DataFile *file, const enum DataType type, const void *buffer, const size_t count) {
-    printf("posicao %d \n", ftell(file->file));
     if (file == NULL || file->file == NULL || buffer == NULL) return false;
     if (file->mode == READ_ONLY) return false;
 
@@ -148,7 +148,7 @@ bool FileRepository_flush(struct DataFile *file) {
 
 void FileRepository_close(struct DataFile *file) {
     if (file == NULL || file->file == NULL) return;
-    if (file->edited) FileRepository_flush(file);
+    if (!file->consistent) FileRepository_flush(file);
     fclose(file->file);
     free(file);
 }
