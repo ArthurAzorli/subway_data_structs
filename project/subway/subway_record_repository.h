@@ -4,6 +4,7 @@
 #include "../services/file/file_repository.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 
 /**

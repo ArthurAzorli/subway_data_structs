@@ -19,38 +19,33 @@
 
 // ===== Private Program Functions ===== \\
 
-size_t Program_countStations(struct SubwayRecordList *recordList, size_t nameSize, char **name) {
-    if (recordList == NULL || SubwayRecordList_getSize(recordList) == 0) return 0;
+void Program_countStations(
+    struct SubwayRecordList *recordList,
+    struct SubwayRecord *record,
+    uint32_t *stationsCount,
+    uint32_t *pairStationsCount
+) {
+    *stationsCount = 0;
+    *pairStationsCount = 0;
 
-    struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
-    if (record == NULL) return 0;
+    if (recordList == NULL || record == NULL) return;
+    if (SubwayRecordList_getSize(recordList) == 0) return;
 
-    size_t count = 0;
+    struct SubwayRecord *other = malloc(sizeof(struct SubwayRecord));
+    if (other == NULL) return;
+
     for (size_t i = 0; i < SubwayRecordList_getSize(recordList); i++) {
-        if (!SubwayRecordList_get(recordList, i, record)) break;
-        if (record->stationNameLength != nameSize) continue;
-        if (strcmp(record->stationName, *name) != 0) continue;
-        count++;
+        if (!SubwayRecordList_get(recordList, i, other)) break;
+        if (other->stationNameLength == record->stationNameLength &&
+            strcmp(other->stationName, record->stationName) == 0) {
+            *stationsCount += 1;
+        }
+        if (record->originStationID == other->originStationID &&
+            record->destinationStationID == other->destinationStationID) {
+            *pairStationsCount += 1;
+        }
     }
-    free(record);
-    return count;
-}
-
-size_t Program_countStationsPairs(struct SubwayRecordList *recordList, uint32_t originID, uint32_t destinationID) {
-    if (recordList == NULL || SubwayRecordList_getSize(recordList) == 0) return 0;
-
-    struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
-    if (record == NULL) return 0;
-
-    size_t count = 0;
-    for (size_t i = 0; i < SubwayRecordList_getSize(recordList); i++) {
-        if (!SubwayRecordList_get(recordList, i, record)) break;
-        if (record->originStationID != originID) continue;
-        if (record->destinationStationID != destinationID) return count;
-        count++;
-    }
-    free(record);
-    return count;
+    free(other);
 }
 
 /**
@@ -319,10 +314,15 @@ bool Program_initSubwayFile() {
     // Extract records from the input file and add in records list while there are records
     struct SubwayRecord *record;
     while ((record = InputRepository_extractRecord(inputFile)) != NULL) {
-        if (Program_countStations(recordList, record->stationNameLength, &record->stationName) == 0)
-            header->stationsCount++;
-        if (Program_countStationsPairs(recordList, record->originStationID, record->destinationStationID) == 0)
-            header->pairStationsCount++;
+        uint32_t stationsCount = 0, pairStationsCount = 0;
+        Program_countStations(recordList, record, &stationsCount, &pairStationsCount);
+
+        //update header
+        header->nextInsert++;
+        if (stationsCount == 0) header->stationsCount++;
+        if (record->destinationStationID != EMPTY && pairStationsCount == 0) header->pairStationsCount++;
+
+        //add record on list
         SubwayRecordList_add(recordList, record);
         SubwayRecord_free(record);
     }
@@ -380,6 +380,8 @@ bool Program_initSubwayFile() {
     SubwayRecordList_free(recordList);
     free(header);
     free(record1);
+
+    BinarioNaTela(outputFilePath);
     return true;
 }
 

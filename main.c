@@ -11,20 +11,10 @@
  */
 
 #include <stdio.h>
-#include "project/tests/file_repository_test.c"
-#include "project/tests/header_repository_test.c"
-#include "project/tests/record_repository_test.c"
-#include "project/tests/input_repository_test.c"
-#include "project/tests/string_test.c"
 #include "project/program.h"
 
 
 int main() {
-    file_repository_test();
-    header_repository_test();
-    record_repository_test();
-    input_repository_test();
-    string_test();
     int option;
     if (scanf("%d", &option) != 1) return 1;
 

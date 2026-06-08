@@ -1,14 +1,9 @@
-//
-// Created by arthu on 25/05/2026.
-//
-
 #ifndef FILE_REPOSITORY_H
 #define FILE_REPOSITORY_H
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "../utils/types.h"
+#include <stddef.h>
 
 enum DataType {BOOLEAN, INTEGER, CHAR};
 

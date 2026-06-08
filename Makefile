@@ -7,13 +7,13 @@ INCLUDES = -I.
 # Source files (list explicitly)
 SRC = main.c \
       project/program.c \
-      project/core/file/file_repository.c \
-      project/domain/subway_record.c \
+      project/services/file/file_repository.c \
       project/lib/provided.c \
-      project/service/database/data_base_repository.c \
-      project/service/database/header_repository.c \
-      project/service/database/record_repository.c \
-      project/service/input/input_repository.c
+      project/lib/subway_record_list.c \
+      project/subway/subway_header_repository.c \
+      project/subway/subway_record_repository.c \
+      project/subway/input/input_repository.c
+
 
 OBJ = $(SRC:.c=.o)
 
