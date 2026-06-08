@@ -79,8 +79,6 @@ void header_repository_test() {
     assert(FileRepository_flush(df));
     FileRepository_close(df);
 
-    return;
-
     // ===== Test 5: Verify Persistence After Reopen ===== \\
     printf("Testing data persistence after file reopen...\n");
 

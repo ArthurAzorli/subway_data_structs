@@ -108,6 +108,7 @@ void record_repository_test() {
 
     // Read Record 1
     struct SubwayRecord *read1 = SubwayRecordRepository_readRecord(df);
+    printf("Read Record 1: originStationID=%u, stationName=%s\n", read1->originStationID, read1->stationName);
     assert(read1 != NULL);
     assert(read1->originStationID == 100);
     assert(read1->originLineID == 10);

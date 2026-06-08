@@ -13,6 +13,7 @@
 
 #define INPUT_MAX_LENGTH 101
 #define SUBWAY_HEADER_OFFSET 0
+#define SUBWAY_RECORD_OFFSET 16
 #define SUBWAY_RECORD_SIZE 80
 
 
@@ -170,7 +171,7 @@ void Program_readIntAsString(char *value) {
     }
 }
 
-bool Program_searchCriteria(const struct  DataSubwayHeader* header, struct DataFile *file) {
+bool Program_searchCriteria(const struct DataSubwayHeader *header, struct DataFile *file) {
     if (header == NULL || file == NULL) return false;
     bool printedAny = false;
 
@@ -186,7 +187,6 @@ bool Program_searchCriteria(const struct  DataSubwayHeader* header, struct DataF
         // Reads the search field
         char field[INPUT_MAX_LENGTH];
         if (scanf("%s", field) != 1) return false;
-
 
         // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
         if (strcmp(field, "codEstacao") == 0) {
@@ -439,7 +439,10 @@ bool Program_searchRecord() {
             free(header);
             return false;
         }
-        if (i < searchesCount - 1) printf("\n");
+        if (i < searchesCount - 1) {
+            FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+            printf("\n");
+        }
     }
 
     // close file and finish memory
@@ -487,4 +490,3 @@ bool Program_getRecordByRRN() {
     free(header);
     return true;
 }
-

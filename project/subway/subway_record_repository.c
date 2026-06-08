@@ -140,7 +140,7 @@ bool SubwayRecordRepository_readRecordData(struct DataFile *dataFile, struct Sub
         return false;
     }
     const size_t remaining = RECORD_LENGTH - 37 - record->stationNameLength - record->lineNameLength;
-    FileRepository_read(dataFile, INTEGER, &record->originStationID, remaining);
+    FileRepository_move(dataFile, remaining);
     return true;
 }
 
