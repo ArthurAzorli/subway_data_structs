@@ -186,27 +186,27 @@ bool Program_searchCriteria(const struct DataSubwayHeader *header, struct DataFi
         // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
         if (strcmp(field, "codEstacao") == 0) {
             criteria[criteriaCount - 1].field = StationID;
-            Program_readIntAsString(criteria[j].value);
+            Program_readIntAsString(criteria[criteriaCount - 1].value);
         } else if (strcmp(field, "nomeEstacao") == 0) {
-            criteria[position++].field = StationName;
+            criteria[position].field = StationName;
             ScanQuoteString(criteria[position++].value);
         } else if (strcmp(field, "codLinha") == 0) {
-            criteria[position++].field = LineID;
+            criteria[position].field = LineID;
             Program_readIntAsString(criteria[position++].value);
         } else if (strcmp(field, "nomeLinha") == 0) {
-            criteria[position++].field = LineName;
+            criteria[position].field = LineName;
             ScanQuoteString(criteria[position++].value);
         } else if (strcmp(field, "codProxEstacao") == 0) {
-            criteria[position++].field = DestinationStationID;
+            criteria[position].field = DestinationStationID;
             Program_readIntAsString(criteria[position++].value);
         } else if (strcmp(field, "distProxEstacao") == 0) {
-            criteria[position++].field = Distant;
+            criteria[position].field = Distant;
             Program_readIntAsString(criteria[position++].value);
         } else if (strcmp(field, "codEstIntegra") == 0) {
-            criteria[position++].field = InteractionStationID;
+            criteria[position].field = InteractionStationID;
             Program_readIntAsString(criteria[position++].value);
         } else if (strcmp(field, "codLinhaIntegra") == 0) {
-            criteria[position++].field = InteractionLineID;
+            criteria[position].field = InteractionLineID;
             Program_readIntAsString(criteria[position++].value);
         } else {
             return false;
