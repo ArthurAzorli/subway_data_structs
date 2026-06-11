@@ -10,9 +10,11 @@ SRC = main.c \
       project/services/file/file_repository.c \
       project/lib/provided.c \
       project/lib/subway_record_list.c \
+      project/lib/indexable_record_avl.c \
       project/subway/subway_header_repository.c \
       project/subway/subway_record_repository.c \
-      project/subway/input/input_repository.c
+      project/subway/input/input_repository.c \
+      project/indexable/indexable_record_repository.c
 
 
 OBJ = $(SRC:.c=.o)

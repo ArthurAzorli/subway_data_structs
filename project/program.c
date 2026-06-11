@@ -5,6 +5,7 @@
 #include "subway/input/input_repository.h"
 #include "subway/search_criteria.h"
 #include "lib/subway_record_list.h"
+#include "lib/indexable_record_avl.h"
 #include "lib/provided.h"
 
 #include <stdio.h>
@@ -21,7 +22,7 @@
 
 void Program_countStations(
     struct SubwayRecordList *recordList,
-    struct SubwayRecord *record,
+    const struct SubwayRecord *record,
     uint32_t *stationsCount,
     uint32_t *pairStationsCount
 ) {
@@ -381,6 +382,7 @@ bool Program_initSubwayFile() {
     free(header);
     free(record1);
 
+    //show binary
     BinarioNaTela(outputFilePath);
     return true;
 }
@@ -490,5 +492,78 @@ bool Program_getRecordByRRN() {
     //close file and free memory
     FileRepository_close(dataFile);
     free(header);
+    return true;
+}
+
+bool Program_initIndexableFile() {
+    //read files paths
+    char inputFilePath[INPUT_MAX_LENGTH], outputFilePath[INPUT_MAX_LENGTH];
+    if (scanf("%s %s", inputFilePath, outputFilePath) != 2) return false;
+
+    struct IndexableRecordAVL *avl = NULL;
+
+    //open input file
+    struct DataFile *inputFile = FileRepository_openOrCreate(inputFilePath, READ_ONLY);
+    if (inputFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        return false;
+    }
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(inputFile);
+    if (header == NULL) {
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(inputFile);
+        return false;
+    }
+
+    //read each record and prints
+    size_t recordCount = 0;
+    for (size_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(inputFile);
+        if (record == NULL) continue;
+        struct IndexableRecord index = {i, record->originStationID};
+        avl = IndexableRecordAVL_push(avl, &index);
+        recordCount++;
+        SubwayRecord_free(record);
+    }
+
+    //close input file
+    FileRepository_close(inputFile);
+
+    //catch avl error
+    if (avl == NULL) {
+        free(header);
+        return false;
+    }
+
+    //open output file
+    struct DataFile *outputFile = FileRepository_openOrCreate(outputFilePath, WRITE_ONLY);
+    if (outputFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        free(header);
+        return false;
+    }
+
+    //write each AVL indexable record in file
+    for (size_t i = 0; i < recordCount; i++) {
+        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
+        if (index == NULL) continue;
+        if (!IndexableRecordRepository_writeRecord(outputFile, index)) {
+            FileRepository_close(outputFile);
+            IndexableRecordAVL_free(avl);
+            free(header);
+            return false;
+        }
+    }
+
+    //close outputfile and free memory
+    FileRepository_flush(outputFile);
+    FileRepository_close(outputFile);
+    IndexableRecordAVL_free(avl);
+    free(header);
+
+    //show binary
+    BinarioNaTela(outputFilePath);
     return true;
 }

@@ -35,6 +35,10 @@ int main() {
             if (!Program_getRecordByRRN()) printf("Falha no processamento do arquivo.\n");
             break;
         }
+        case 5: {
+            if (!Program_initIndexableFile()) printf("Falha no processamento do arquivo.\n");
+            break;
+        }
         default:
 
 

@@ -22,4 +22,8 @@ add_executable(Trabalho01
         project/subway/search_criteria.h
         project/lib/subway_record_list.c
         project/lib/subway_record_list.h
+        project/lib/indexable_record_avl.c
+        project/lib/indexable_record_avl.h
+        project/indexable/indexable_record_repository.c
+        project/indexable/indexable_record_repository.h
 )

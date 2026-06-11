@@ -18,4 +18,8 @@ bool Program_searchRecord();
 
 bool Program_getRecordByRRN();
 
+bool Program_initIndexableFile();
+
+
+
 #endif //TRABALHO01_PROGRAM_H
