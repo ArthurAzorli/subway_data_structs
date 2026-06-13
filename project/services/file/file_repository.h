@@ -21,8 +21,6 @@ bool FileRepository_write(struct DataFile* file, enum DataType type, const void 
 
 bool FileRepository_read(struct DataFile* file, enum DataType type, void *buffer, size_t count);
 
-bool FileRepository_flush(struct DataFile* file);
-
 void FileRepository_close(struct DataFile* file);
 
 #endif //FILE_REPOSITORY_H

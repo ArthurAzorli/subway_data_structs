@@ -11,17 +11,17 @@ bool IndexableRecordRepository_writeRecord(struct DataFile *dataFile, const stru
     return true;
 }
 
-bool IndexableRecordRepository_readRecord(struct DataFile *dataFile, struct IndexableRecord *record) {
-    if (dataFile == NULL || record == NULL) return false;
+bool IndexableRecordRepository_readRecord(struct DataFile *dataFile, struct IndexableRecord **record) {
+    if (dataFile == NULL) return false;
 
-    record = malloc(sizeof(struct IndexableRecord));
-    if (record == NULL) return false;
-    if (!FileRepository_read(dataFile, INTEGER, &record->stationID, 1)) {
-        free(record);
+    *record = malloc(sizeof(struct IndexableRecord));
+    if (*record == NULL) return false;
+    if (!FileRepository_read(dataFile, INTEGER, &(*record)->stationID, 1)) {
+        free(*record);
         return false;
     }
-    if (!FileRepository_read(dataFile, INTEGER, &record->rrn, 1)) {
-        free(record);
+    if (!FileRepository_read(dataFile, INTEGER, &(*record)->rrn, 1)) {
+        free(*record);
         return false;
     }
     return true;

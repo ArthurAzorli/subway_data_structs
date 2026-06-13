@@ -39,6 +39,10 @@ int main() {
             if (!Program_initIndexableFile()) printf("Falha no processamento do arquivo.\n");
             break;
         }
+        case 6: {
+            if (!Program_searchRecordByIndexable()) printf("Falha no processamento do arquivo.\n");
+            break;
+        }
         default:
 
 

@@ -138,17 +138,13 @@ bool FileRepository_read(struct DataFile *file, const enum DataType type, void *
     return true;
 }
 
-bool FileRepository_flush(struct DataFile *file) {
-    if (file == NULL || file->file == NULL) return false;
-    if (file->mode == READ_ONLY) return true;
-    if (!FileRepository_setConsistent(file, true)) return false;
-    fflush(file->file);
-    return true;
-}
 
 void FileRepository_close(struct DataFile *file) {
     if (file == NULL || file->file == NULL) return;
-    if (!file->consistent) FileRepository_flush(file);
+    if (!file->consistent && file->mode != READ_ONLY) {
+        FileRepository_setConsistent(file, true);
+    }
+    fflush(file->file);
     fclose(file->file);
     free(file);
 }

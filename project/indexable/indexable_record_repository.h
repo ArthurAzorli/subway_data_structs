@@ -14,6 +14,6 @@ struct IndexableRecord {
 };
 
 bool IndexableRecordRepository_writeRecord(struct DataFile *dataFile, const struct IndexableRecord *record);
-bool IndexableRecordRepository_readRecord(struct DataFile *dataFile, struct IndexableRecord *record);
+bool IndexableRecordRepository_readRecord(struct DataFile *dataFile, struct IndexableRecord **record);
 
 #endif //INDEXABLE_RECORD_REPOSITORY_H

@@ -109,27 +109,13 @@ void Program_printRecord(const struct SubwayRecord *record) {
     printf("\n");
 }
 
-/**
- * @brief Compares an unsigned 32-bit integer field value with a string representation.
- *
- * Converts the string value to an unsigned integer (treating empty string as EMPTY constant)
- * and compares it with the record's field value. Used for matching numeric fields during search.
- *
- * @param recordValue: The numeric value from the record field to compare
- * @param value: The string value to compare against (converted to uint32_t)
- * @return true if values match, false otherwise
- */
-bool Program_cmpUint32(const uint32_t recordValue, const char *value) {
-    if (value == NULL || strcmp(value, "") == 0 || strcmp(value, "NULO") == 0) {
-        return recordValue == EMPTY;
-    }
+
+uint32_t Program_parseUint32(const char *value) {
+    if (value == NULL || strcmp(value, "") == 0 || strcmp(value, "NULO") == 0) return EMPTY;
     char *endptr;
     const long converted = strtol(value, &endptr, 10);
-    if (*endptr != '\0') {
-        // valor não é número válido
-        return false;
-    }
-    return recordValue == (uint32_t) converted;
+    if (*endptr != '\0') return EMPTY;
+    return (uint32_t) converted;
 }
 
 /**
@@ -167,27 +153,40 @@ void Program_readIntAsString(char *value) {
     }
 }
 
-bool Program_searchCriteria(const struct DataSubwayHeader *header, struct DataFile *file) {
-    if (header == NULL || file == NULL) return false;
-    bool printedAny = false;
+struct IndexableRecordAVL *Program_readIndexableAVL(const char *fileName) {
+    if (fileName == NULL) return NULL;
 
+    struct IndexableRecordAVL *avl = NULL;
+    struct DataFile *file = FileRepository_openOrCreate(fileName, READ_ONLY);
+    if (file == NULL) return NULL;
+
+    struct IndexableRecord *indexable = NULL;
+    while (true) {
+        if (!IndexableRecordRepository_readRecord(file, &indexable)) break;
+        avl = IndexableRecordAVL_push(avl, indexable);
+        free(indexable);
+    }
+
+    return avl;
+}
+
+bool Program_readSearchCriteria(struct SearchCriteria *criteria, size_t *criteriaCount, bool *searchByID) {
     // Reads the number of criteria for the search
-    uint32_t criteriaCount;
-    if (scanf("%u", &criteriaCount) != 1)return false;
-
+    if (scanf("%zu", criteriaCount) != 1) return false;
+    *searchByID = false;
 
     // Reads the criteria for the search
     uint32_t position = 0;
-    struct SearchCriteria criteria[criteriaCount];
-    for (uint32_t j = 0; j < criteriaCount; j++) {
+    for (uint32_t j = 0; j < *criteriaCount; j++) {
         // Reads the search field
         char field[INPUT_MAX_LENGTH];
         if (scanf("%s", field) != 1) return false;
 
         // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
         if (strcmp(field, "codEstacao") == 0) {
-            criteria[criteriaCount - 1].field = StationID;
-            Program_readIntAsString(criteria[criteriaCount - 1].value);
+            *searchByID = true;
+            criteria[*criteriaCount - 1].field = StationID;
+            Program_readIntAsString(criteria[*criteriaCount - 1].value);
         } else if (strcmp(field, "nomeEstacao") == 0) {
             criteria[position].field = StationName;
             ScanQuoteString(criteria[position++].value);
@@ -213,73 +212,127 @@ bool Program_searchCriteria(const struct DataSubwayHeader *header, struct DataFi
             return false;
         }
     }
+    return true;
+}
 
-    // Iterates through all records in database
-    for (uint32_t i = 0; i < header->nextInsert; i++) {
-        struct SubwayRecord *record = SubwayRecordRepository_readRecord(file);
-        if (record == NULL) continue; // removed or invalid
+bool Program_recordMatchesCriteria(const struct SubwayRecord *record, struct SearchCriteria *criteria,
+                                   size_t criteriaCount) {
+    if (record == NULL || criteria == NULL) return false;
 
-        // Checks each record field present in the search criteria
-        // If any do not match, skip to the next record
+    for (size_t j = 0; j < criteriaCount; j++) {
+        const char *value = criteria[j].value;
         bool match = false;
-        bool uniqueFound = false;
-        for (uint32_t j = 0; j < criteriaCount; j++) {
-            const char *value = criteria[j].value;
 
-            switch (criteria[j].field) {
-                case StationID: {
-                    match = Program_cmpUint32(record->originStationID, value);
-                    uniqueFound = match;
-                    break;
-                }
-                case StationName: {
-                    match = Program_cmpString(record->stationName, value);
-                    break;
-                }
-                case LineID: {
-                    match = Program_cmpUint32(record->originLineID, value);
-                    break;
-                }
-                case LineName: {
-                    match = Program_cmpString(record->lineName, value);
-                    break;
-                }
-                case DestinationStationID: {
-                    match = Program_cmpUint32(record->destinationStationID, value);
-                    break;
-                }
-                case Distant: {
-                    match = Program_cmpUint32(record->destinationDistant, value);
-                    break;
-                }
-                case InteractionStationID: {
-                    match = Program_cmpUint32(record->interactionStationID, value);
-                    break;
-                }
-                case InteractionLineID: {
-                    match = Program_cmpUint32(record->interactionLineID, value);
-                    break;
-                }
-                default:
-                    match = false;
-                    break;
+        switch (criteria[j].field) {
+            case StationID: {
+                const uint32_t stationID = Program_parseUint32(value);
+                match = record->originStationID == stationID;
+                break;
             }
-
-            if (!match) break;
+            case StationName: {
+                match = Program_cmpString(record->stationName, value);
+                break;
+            }
+            case LineID: {
+                const uint32_t lineID = Program_parseUint32(value);
+                match = record->originLineID == lineID;
+                break;
+            }
+            case LineName: {
+                match = Program_cmpString(record->lineName, value);
+                break;
+            }
+            case DestinationStationID: {
+                const uint32_t destinationStationID = Program_parseUint32(value);
+                match = destinationStationID == record->destinationStationID;
+                break;
+            }
+            case Distant: {
+                const uint32_t distant = Program_parseUint32(value);
+                match = distant == record->destinationDistant;
+                break;
+            }
+            case InteractionStationID: {
+                const uint32_t interactionStationID = Program_parseUint32(value);
+                match = interactionStationID == record->interactionStationID;
+                break;
+            }
+            case InteractionLineID: {
+                const uint32_t interactionLineID = Program_parseUint32(value);
+                match = interactionLineID == record->interactionLineID;
+                break;
+            }
+            default:
+                match = false;
+                break;
         }
 
-        // If a record is found, print it
-        if (match) {
-            Program_printRecord(record);
-            printedAny = true;
+        if (!match) return false;
+    }
+
+    return true;
+}
+
+
+bool Program_searchCriteriaByIndexable(const struct DataSubwayHeader *header, struct DataFile *file,
+                                       const struct IndexableRecordAVL *avl,
+                                       struct SubwayRecordList *subwayList) {
+    if (file == NULL || avl == NULL || subwayList == NULL) return false;
+
+    // Reads  criteria for the search
+    bool searchByID;
+    size_t criteriaCount;
+    struct SearchCriteria *criteria = calloc(8, sizeof(struct SearchCriteria));
+    if (criteria == NULL) {
+        printf("Not enough memory for search criteria\n");
+        return false;
+    }
+
+    if (!Program_readSearchCriteria(criteria, &criteriaCount, &searchByID)) {
+        printf("erro na leitura");
+        free(criteria);
+        return false;
+    }
+
+    if (searchByID) {
+        const uint32_t stationID = Program_parseUint32(criteria[criteriaCount - 1].value);
+
+        const struct IndexableRecord *indexable = IndexableRecordAVL_getByStationID(avl, stationID);
+        if (indexable == NULL) {
+            free(criteria);
+            return true;
+        }
+
+        const uint32_t byteOffset = indexable->rrn * SUBWAY_RECORD_SIZE + SUBWAY_RECORD_OFFSET;
+        FileRepository_goto(file, (long) byteOffset);
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(file);
+        if (record == NULL) {
+            free(criteria);
+            return false;
+        }
+
+        //verify if fields matches without station ID
+        if (Program_recordMatchesCriteria(record, criteria, criteriaCount - 1)) {
+            SubwayRecordList_add(subwayList, record);
         }
 
         SubwayRecord_free(record);
-        if (uniqueFound) return true;
+    } else {
+        // Iterates through all records in database
+        for (uint32_t i = 0; i < header->nextInsert; i++) {
+            struct SubwayRecord *record = SubwayRecordRepository_readRecord(file);
+            if (record == NULL) continue; // removed or invalid
+
+            // Checks each record field present in the search criteria
+            // If any do not match, skip to the next record, else add it
+            if (Program_recordMatchesCriteria(record, criteria, criteriaCount)) {
+                SubwayRecordList_add(subwayList, record);
+            }
+            SubwayRecord_free(record);
+        }
     }
 
-    // If there are no records founded, print message
-    if (!printedAny) printf("Registro inexistente.\n");
+    free(criteria);
     return true;
 }
 
@@ -374,7 +427,6 @@ bool Program_initSubwayFile() {
     }
 
     //close output file
-    FileRepository_flush(dataFile);
     FileRepository_close(dataFile);
 
     //free memory
@@ -438,15 +490,53 @@ bool Program_searchRecord() {
 
     // Performs n searches
     for (uint32_t i = 0; i < searchesCount; i++) {
-        if (!Program_searchCriteria(header, dataFile)) {
+        bool printedAny = false;
+
+        // Reads  criteria for the search
+        bool searchByID;
+        size_t criteriaCount;
+        struct SearchCriteria *criteria = calloc(8, sizeof(struct SearchCriteria));
+        if (criteria == NULL) {
             FileRepository_close(dataFile);
             free(header);
             return false;
         }
+
+        if (!Program_readSearchCriteria(criteria, &criteriaCount, &searchByID)) {
+            FileRepository_close(dataFile);
+            free(header);
+            free(criteria);
+            return false;
+        }
+
+        // Iterates through all records in database
+        for (uint32_t j = 0; j < header->nextInsert; j++) {
+            struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+            if (record == NULL) continue; // removed or invalid
+
+            // Checks each record field present in the search criteria
+            // If any do not match, skip to the next record
+            const bool match = Program_recordMatchesCriteria(record, criteria, criteriaCount);
+
+            if (match) {
+                Program_printRecord(record);
+                printedAny = true;
+            }
+
+            SubwayRecord_free(record);
+            //stop search when found stationID
+            if (match && searchByID) break;
+        }
+
+        // If there are no records founded, print message
+        if (!printedAny) printf("Registro inexistente.\n");
+
+
         if (i < searchesCount - 1) {
             FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
             printf("\n");
         }
+        free(criteria);
     }
 
     // close file and finish memory
@@ -518,13 +608,11 @@ bool Program_initIndexableFile() {
     }
 
     //read each record and prints
-    size_t recordCount = 0;
     for (size_t i = 0; i < header->nextInsert; i++) {
         struct SubwayRecord *record = SubwayRecordRepository_readRecord(inputFile);
         if (record == NULL) continue;
         struct IndexableRecord index = {i, record->originStationID};
         avl = IndexableRecordAVL_push(avl, &index);
-        recordCount++;
         SubwayRecord_free(record);
     }
 
@@ -546,7 +634,7 @@ bool Program_initIndexableFile() {
     }
 
     //write each AVL indexable record in file
-    for (size_t i = 0; i < recordCount; i++) {
+    for (size_t i = 0; i < avl->size; i++) {
         const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
         if (index == NULL) continue;
         if (!IndexableRecordRepository_writeRecord(outputFile, index)) {
@@ -558,12 +646,81 @@ bool Program_initIndexableFile() {
     }
 
     //close outputfile and free memory
-    FileRepository_flush(outputFile);
     FileRepository_close(outputFile);
     IndexableRecordAVL_free(avl);
     free(header);
 
     //show binary
     BinarioNaTela(outputFilePath);
+    return true;
+}
+
+bool Program_searchRecordByIndexable() {
+    //read files paths and searches count
+    uint32_t searchesCount;
+    char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
+    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+
+    // If there are no searches, do nothing
+    if (searchesCount == 0) return true;
+
+    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    if (avl == NULL) return false;
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(subwayFilePath, READ_ONLY);
+    if (dataFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        return false;
+    }
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    // Performs n searches
+    for (uint32_t i = 0; i < searchesCount; i++) {
+        struct SubwayRecordList *result = SubwayRecordList_init();
+        if (result == NULL) {
+            IndexableRecordAVL_free(avl);
+            FileRepository_close(dataFile);
+            free(header);
+            return false;
+        }
+
+        if (!Program_searchCriteriaByIndexable(header, dataFile, avl, result)) {
+            SubwayRecordList_free(result);
+            IndexableRecordAVL_free(avl);
+            FileRepository_close(dataFile);
+            free(header);
+            return false;
+        }
+
+        const size_t resultCounts = SubwayRecordList_getSize(result);
+        if (resultCounts > 0) {
+            for (size_t j = 0; j < resultCounts; j++) {
+                struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
+                if (!SubwayRecordList_get(result, j, record)) continue;
+                Program_printRecord(record);
+                SubwayRecord_free(record);
+            }
+        } else {
+            printf("Registro inexistente.\n");
+        }
+
+
+        if (i < searchesCount - 1) {
+            FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+            printf("\n");
+        }
+    }
+
+    // close file and finish memory
+    FileRepository_close(dataFile);
+    free(header);
     return true;
 }

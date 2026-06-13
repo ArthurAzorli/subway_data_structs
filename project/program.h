@@ -20,6 +20,8 @@ bool Program_getRecordByRRN();
 
 bool Program_initIndexableFile();
 
+bool Program_searchRecordByIndexable();
+
 
 
 #endif //TRABALHO01_PROGRAM_H
