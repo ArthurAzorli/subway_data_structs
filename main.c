@@ -51,6 +51,10 @@ int main() {
             if (!Program_insertRecord()) printf("Falha no processamento do arquivo.\n");
             break;
         }
+        case 9: {
+            if (!Program_updateRecord()) printf("Falha no processamento do arquivo.\n");
+            break;
+        }
         default:
 
 

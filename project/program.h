@@ -26,6 +26,6 @@ bool Program_removeRecords();
 
 bool Program_insertRecord();
 
-
+bool Program_updateRecord();
 
 #endif //TRABALHO01_PROGRAM_H

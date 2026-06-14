@@ -8,8 +8,8 @@
  * @note Cada nó armazena uma cópia do registro e um ponteiro para o próximo nó
  */
 typedef struct SubwayRecordNode {
-    struct SubwayRecord *record;        // Ponteiro para o registro armazenado
-    struct SubwayRecordNode *next;      // Ponteiro para o próximo nó (NULL se último)
+    struct SubwayRecord *record; // Ponteiro para o registro armazenado
+    struct SubwayRecordNode *next; // Ponteiro para o próximo nó (NULL se último)
 } SubwayRecordNode;
 
 /**
@@ -17,16 +17,16 @@ typedef struct SubwayRecordNode {
  * @note Mantém referências ao primeiro e último nó para operações eficientes
  */
 struct SubwayRecordList {
-    SubwayRecordNode *head;             // Primeiro nó da lista (NULL se vazia)
-    SubwayRecordNode *tail;             // Último nó da lista (NULL se vazia)
-    size_t size;                        // Número de elementos na lista
+    SubwayRecordNode *head; // Primeiro nó da lista (NULL se vazia)
+    SubwayRecordNode *tail; // Último nó da lista (NULL se vazia)
+    size_t size; // Número de elementos na lista
 };
 
 /**
  * @brief Inicializa uma nova lista vazia de registros de metrô
  * @return Ponteiro para a nova lista, ou NULL se falhar na alocação
  */
-struct SubwayRecordList* SubwayRecordList_init() {
+struct SubwayRecordList *SubwayRecordList_init() {
     struct SubwayRecordList *list = malloc(sizeof(struct SubwayRecordList));
     if (list == NULL) return NULL;
 
@@ -68,8 +68,41 @@ bool SubwayRecordList_get(struct SubwayRecordList *list, size_t index, struct Su
 
     if (current == NULL || current->record == NULL) return false;
 
-    // Copiar os dados do registro
-    memcpy(record, current->record, sizeof(struct SubwayRecord));
+    // Copiar todos os campos do registro original
+    record->rrn = current->record->rrn;
+    record->originStationID = current->record->originStationID;
+    record->originLineID = current->record->originLineID;
+    record->destinationStationID = current->record->destinationStationID;
+    record->destinationDistant = current->record->destinationDistant;
+    record->interactionStationID = current->record->interactionStationID;
+    record->interactionLineID = current->record->interactionLineID;
+
+    // Copiar stationName
+    if (current->record->stationName != NULL) {
+        record->stationName = strdup(current->record->stationName);
+        if (record->stationName == NULL) {
+            free(record);
+            return false;
+        }
+        record->stationNameLength = current->record->stationNameLength;
+    } else {
+        record->stationName = NULL;
+        record->stationNameLength = 0;
+    }
+
+    // Copiar lineName
+    if (current->record->lineName != NULL) {
+        record->lineName = strdup(current->record->lineName);
+        if (record->lineName == NULL) {
+            free(record->stationName);
+            free(record);
+            return false;
+        }
+        record->lineNameLength = current->record->lineNameLength;
+    } else {
+        record->lineName = NULL;
+        record->lineNameLength = 0;
+    }
 
     return true;
 }
@@ -96,30 +129,41 @@ void SubwayRecordList_add(struct SubwayRecordList *list, struct SubwayRecord *re
     }
 
     // Copiar todos os campos do registro original
-    memcpy(copiedRecord, record, sizeof(struct SubwayRecord));
+    copiedRecord->rrn = record->rrn;
+    copiedRecord->originStationID = record->originStationID;
+    copiedRecord->originLineID = record->originLineID;
+    copiedRecord->destinationStationID = record->destinationStationID;
+    copiedRecord->destinationDistant = record->destinationDistant;
+    copiedRecord->interactionStationID = record->interactionStationID;
+    copiedRecord->interactionLineID = record->interactionLineID;
 
-    // Copiar as strings (deep copy)
-    if (record->stationName != NULL && record->stationNameLength > 0) {
-        copiedRecord->stationName = malloc(record->stationNameLength + 1);
+    // Copiar stationName
+    if (record->stationName != NULL) {
+        copiedRecord->stationName = strdup(record->stationName);
         if (copiedRecord->stationName == NULL) {
             free(copiedRecord);
             free(newNode);
             return;
         }
-        memcpy(copiedRecord->stationName, record->stationName, record->stationNameLength);
-        copiedRecord->stationName[record->stationNameLength] = '\0';
+        copiedRecord->stationNameLength = record->stationNameLength;
+    } else {
+        copiedRecord->stationName = NULL;
+        copiedRecord->stationNameLength = 0;
     }
 
-    if (record->lineName != NULL && record->lineNameLength > 0) {
-        copiedRecord->lineName = malloc(record->lineNameLength + 1);
+    // Copiar lineName
+    if (record->lineName != NULL) {
+        copiedRecord->lineName = strdup(record->lineName);
         if (copiedRecord->lineName == NULL) {
             free(copiedRecord->stationName);
             free(copiedRecord);
             free(newNode);
             return;
         }
-        memcpy(copiedRecord->lineName, record->lineName, record->lineNameLength);
-        copiedRecord->lineName[record->lineNameLength] = '\0';
+        copiedRecord->lineNameLength = record->lineNameLength;
+    } else {
+        copiedRecord->lineName = NULL;
+        copiedRecord->lineNameLength = 0;
     }
 
     newNode->record = copiedRecord;
@@ -193,7 +237,7 @@ void SubwayRecordList_removeByStationID(struct SubwayRecordList *list, uint32_t 
     if (list == NULL || list->size == 0) return;
 
     SubwayRecordNode *nodeToRemove;
-    if (list->head->record->originStationID ==  stationID) {
+    if (list->head->record->originStationID == stationID) {
         // Remover o primeiro nó
         nodeToRemove = list->head;
         list->head = list->head->next;
@@ -230,8 +274,6 @@ void SubwayRecordList_removeByStationID(struct SubwayRecordList *list, uint32_t 
     // Liberar o nó
     free(nodeToRemove);
     list->size--;
-
-
 }
 
 /**
