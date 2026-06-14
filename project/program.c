@@ -313,6 +313,7 @@ bool Program_searchCriteriaByIndexable(const struct DataSubwayHeader *header, st
 
         //verify if fields matches without station ID
         if (Program_recordMatchesCriteria(record, criteria, criteriaCount - 1)) {
+            record->rrn = indexable->rrn;
             SubwayRecordList_add(subwayList, record);
         }
 
@@ -326,6 +327,7 @@ bool Program_searchCriteriaByIndexable(const struct DataSubwayHeader *header, st
             // Checks each record field present in the search criteria
             // If any do not match, skip to the next record, else add it
             if (Program_recordMatchesCriteria(record, criteria, criteriaCount)) {
+                record->rrn = i;
                 SubwayRecordList_add(subwayList, record);
             }
             SubwayRecord_free(record);
@@ -723,4 +725,169 @@ bool Program_searchRecordByIndexable() {
     FileRepository_close(dataFile);
     free(header);
     return true;
+}
+
+bool Program_removeRecords() {
+    //read files paths and searches count
+    uint32_t searchesCount;
+    char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
+    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+
+    // If there are no searches, do nothing
+    if (searchesCount == 0) return true;
+
+    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    if (avl == NULL) return false;
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(subwayFilePath, READ_WRITE);
+    if (dataFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        return false;
+    }
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    struct SubwayRecordList *subwayList = SubwayRecordList_init();
+    for (uint32_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+        if (record == NULL) continue; // removed or invalid
+
+        SubwayRecordList_add(subwayList, record);
+        SubwayRecord_free(record);
+    }
+
+    FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+
+
+    // Performs n searches
+    for (uint32_t i = 0; i < searchesCount; i++) {
+        struct SubwayRecordList *result = SubwayRecordList_init();
+        if (result == NULL) {
+            IndexableRecordAVL_free(avl);
+            FileRepository_close(dataFile);
+            free(header);
+            return false;
+        }
+
+        if (!Program_searchCriteriaByIndexable(header, dataFile, avl, result)) {
+            SubwayRecordList_free(result);
+            IndexableRecordAVL_free(avl);
+            FileRepository_close(dataFile);
+            free(header);
+            return false;
+        }
+
+        const size_t resultCounts = SubwayRecordList_getSize(result);
+
+        for (size_t j = 0; j < resultCounts; j++) {
+            struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
+            if (!SubwayRecordList_get(result, j, record)) continue;
+
+            const uint32_t byteOffset = record->rrn * SUBWAY_RECORD_SIZE + SUBWAY_RECORD_OFFSET;
+            FileRepository_goto(dataFile, (long) byteOffset);
+
+            //logic remove record on file and remove on list and avl
+            SubwayRecordRepository_removeRecord(dataFile, header->lastRemoved);
+            SubwayRecordList_removeByStationID(subwayList, record->originStationID);
+            IndexableRecordAVL_remove(avl, record->originStationID);
+
+            uint32_t stationsCount = 0, pairStationsCount = 0;
+            Program_countStations(subwayList, record, &stationsCount, &pairStationsCount);
+
+            //update header
+            header->lastRemoved = record->rrn;
+            if (stationsCount == 0) header->stationsCount--;
+            if (record->destinationStationID != EMPTY && pairStationsCount == 0) header->pairStationsCount--;
+
+            SubwayRecord_free(record);
+        }
+
+
+        if (i < searchesCount - 1) {
+            FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+        }
+    }
+
+    FileRepository_goto(dataFile, 0);
+    SubwayHeaderRepository_write(header, dataFile);
+
+
+    // close file and finish memory
+    FileRepository_close(dataFile);
+    free(header);
+
+    //open output file
+    struct DataFile *indexFile = FileRepository_openOrCreate(indexFilePath, WRITE_ONLY);
+    if (indexFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        return false;
+    }
+
+    //write each AVL indexable record in file
+    for (size_t i = 0; i < avl->size; i++) {
+        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
+        if (index == NULL) continue;
+        if (!IndexableRecordRepository_writeRecord(indexFile, index)) {
+            FileRepository_close(indexFile);
+            IndexableRecordAVL_free(avl);
+            return false;
+        }
+    }
+
+    // close file and finish memory
+    FileRepository_close(indexFile);
+    IndexableRecordAVL_free(avl);
+
+    //print binary
+    BinarioNaTela(subwayFilePath);
+    BinarioNaTela(indexFilePath);
+    return true;
+}
+
+bool Program_insertRecord() {
+    //read files paths and searches count
+    uint32_t searchesCount;
+    char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
+    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+
+    // If there are no searches, do nothing
+    if (searchesCount == 0) return true;
+
+    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    if (avl == NULL) return false;
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(subwayFilePath, READ_WRITE);
+    if (dataFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        return false;
+    }
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    struct SubwayRecordList *subwayList = SubwayRecordList_init();
+    for (uint32_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+        if (record == NULL) continue; // removed or invalid
+
+        SubwayRecordList_add(subwayList, record);
+        SubwayRecord_free(record);
+    }
+
+    FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+    return true;
+    
 }

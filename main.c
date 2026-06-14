@@ -43,6 +43,10 @@ int main() {
             if (!Program_searchRecordByIndexable()) printf("Falha no processamento do arquivo.\n");
             break;
         }
+        case 7: {
+            if (!Program_removeRecords()) printf("Falha no processamento do arquivo.\n");
+            break;
+        }
         default:
 
 

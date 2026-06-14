@@ -14,6 +14,7 @@ size_t SubwayRecordList_getSize(struct SubwayRecordList*);
 bool SubwayRecordList_get(struct SubwayRecordList*, size_t index, struct SubwayRecord*);
 void SubwayRecordList_add(struct SubwayRecordList*, struct SubwayRecord*);
 void SubwayRecordList_remove(struct SubwayRecordList*, size_t index);
+void SubwayRecordList_removeByStationID(struct SubwayRecordList*, uint32_t stationID);
 void SubwayRecordList_free(struct SubwayRecordList*);
 
 #endif //SUBWAY_RECORD_LIST_H

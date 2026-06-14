@@ -22,6 +22,10 @@ bool Program_initIndexableFile();
 
 bool Program_searchRecordByIndexable();
 
+bool Program_removeRecords();
+
+bool Program_insertRecord();
+
 
 
 #endif //TRABALHO01_PROGRAM_H

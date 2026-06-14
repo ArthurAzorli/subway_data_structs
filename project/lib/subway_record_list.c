@@ -189,6 +189,51 @@ void SubwayRecordList_remove(struct SubwayRecordList *list, size_t index) {
     list->size--;
 }
 
+void SubwayRecordList_removeByStationID(struct SubwayRecordList *list, uint32_t stationID) {
+    if (list == NULL || list->size == 0) return;
+
+    SubwayRecordNode *nodeToRemove;
+    if (list->head->record->originStationID ==  stationID) {
+        // Remover o primeiro nó
+        nodeToRemove = list->head;
+        list->head = list->head->next;
+
+        if (list->head == NULL) {
+            // Lista ficou vazia
+            list->tail = NULL;
+        }
+    } else {
+        // Encontrar o nó anterior ao que será removido
+        SubwayRecordNode *previous = list->head;
+        for (size_t i = 0; i < list->size; i++) {
+            if (previous == NULL || previous->next == NULL) return;
+            if (previous->next->record->originStationID == stationID) break;
+            previous = previous->next;
+        }
+
+        nodeToRemove = previous->next;
+        if (nodeToRemove == NULL) return;
+
+        previous->next = nodeToRemove->next;
+
+        // Atualizar tail se for removido o último nó
+        if (nodeToRemove == list->tail) {
+            list->tail = previous;
+        }
+    }
+
+    // Liberar o registro dentro do nó
+    if (nodeToRemove->record != NULL) {
+        SubwayRecord_free(nodeToRemove->record);
+    }
+
+    // Liberar o nó
+    free(nodeToRemove);
+    list->size--;
+
+
+}
+
 /**
  * @brief Libera toda a memória associada à lista e seus registros
  * @param list: Ponteiro para a lista
