@@ -887,7 +887,126 @@ bool Program_insertRecord() {
         SubwayRecord_free(record);
     }
 
-    FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+    for (uint32_t i = 0; i < searchesCount; i++) {
+        struct SubwayRecord *record = SubwayRecord_init();
+        if (record == NULL) {
+            FileRepository_close(dataFile);
+            SubwayRecordList_free(subwayList);
+            IndexableRecordAVL_free(avl);
+            free(header);
+            return false;
+        }
+
+        char stationID[INPUT_MAX_LENGTH], lineID[INPUT_MAX_LENGTH], destinationID[INPUT_MAX_LENGTH];
+        char distance[INPUT_MAX_LENGTH], interationStationID[INPUT_MAX_LENGTH], interactionLineID[INPUT_MAX_LENGTH];
+
+        Program_readIntAsString(stationID);
+        record->originStationID = Program_parseUint32(stationID);
+
+        record->stationName = calloc(INPUT_MAX_LENGTH, sizeof(char));
+        ScanQuoteString(record->stationName);
+        record->stationNameLength = strlen(record->stationName);
+
+        Program_readIntAsString(lineID);
+        record->originLineID = Program_parseUint32(lineID);
+
+        record->lineName = calloc(INPUT_MAX_LENGTH, sizeof(char));
+        ScanQuoteString(record->lineName);
+        record->lineNameLength = strlen(record->lineName);
+
+        Program_readIntAsString(destinationID);
+        record->destinationStationID = Program_parseUint32(destinationID);
+
+        Program_readIntAsString(distance);
+        record->destinationDistant = Program_parseUint32(distance);
+
+        Program_readIntAsString(interationStationID);
+        record->interactionStationID = Program_parseUint32(interationStationID);
+
+        Program_readIntAsString(interactionLineID);
+        record->interactionLineID = Program_parseUint32(interactionLineID);
+
+        if (header->lastRemoved == EMPTY) {
+            const long byteOffset = SUBWAY_RECORD_SIZE * header->nextInsert + SUBWAY_RECORD_OFFSET;
+            FileRepository_goto(dataFile, byteOffset);
+            record->rrn = header->nextInsert;
+            header->nextInsert++;
+        } else {
+            const long byteOffset = SUBWAY_RECORD_SIZE * header->lastRemoved + SUBWAY_RECORD_OFFSET;
+            FileRepository_goto(dataFile, byteOffset);
+            record->rrn = header->lastRemoved;
+
+            if (!SubwayRecordRepository_readNextRemoved(dataFile, &header->lastRemoved)) {
+                FileRepository_close(dataFile);
+                SubwayRecordList_free(subwayList);
+                IndexableRecordAVL_free(avl);
+                free(header);
+                free(record);
+                return false;
+            }
+
+            FileRepository_goto(dataFile, byteOffset);
+            struct IndexableRecord index = {header->nextInsert, record->originStationID};
+            IndexableRecordAVL_push(avl, &index);
+        }
+
+        if (!SubwayRecordRepository_writeRecord(dataFile, record)) {
+            FileRepository_close(dataFile);
+            SubwayRecordList_free(subwayList);
+            IndexableRecordAVL_free(avl);
+            free(header);
+            free(record);
+            return false;
+        }
+
+        uint32_t stationsCount = 0, pairStationsCount = 0;
+        Program_countStations(subwayList, record, &stationsCount, &pairStationsCount);
+
+        //update header
+        if (stationsCount == 0) header->stationsCount++;
+        if (record->destinationStationID != EMPTY && pairStationsCount == 0) header->pairStationsCount++;
+
+        SubwayRecordList_add(subwayList, record);
+        struct IndexableRecord index = {record->rrn, record->originStationID};
+        IndexableRecordAVL_remove(avl, record->originStationID);
+        IndexableRecordAVL_push(avl, &index);
+
+        free(record);
+    }
+
+    FileRepository_goto(dataFile, 0);
+    SubwayHeaderRepository_write(header, dataFile);
+
+    FileRepository_close(dataFile);
+    SubwayRecordList_free(subwayList);
+    free(header);
+
+
+    //open output file
+    struct DataFile *indexFile = FileRepository_openOrCreate(indexFilePath, WRITE_ONLY);
+    if (indexFile == NULL) {
+        IndexableRecordAVL_free(avl);
+        return false;
+    }
+
+    //write each AVL indexable record in file
+    for (size_t i = 0; i < avl->size; i++) {
+        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
+        if (index == NULL) continue;
+        if (!IndexableRecordRepository_writeRecord(indexFile, index)) {
+            FileRepository_close(indexFile);
+            IndexableRecordAVL_free(avl);
+            return false;
+        }
+    }
+
+    // close file and finish memory
+    FileRepository_close(indexFile);
+    IndexableRecordAVL_free(avl);
+
+    //print binary
+    BinarioNaTela(subwayFilePath);
+    BinarioNaTela(indexFilePath);
+
     return true;
-    
 }

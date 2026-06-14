@@ -47,7 +47,12 @@ int main() {
             if (!Program_removeRecords()) printf("Falha no processamento do arquivo.\n");
             break;
         }
+        case 8: {
+            if (!Program_insertRecord()) printf("Falha no processamento do arquivo.\n");
+            break;
+        }
         default:
+
 
 
     }
