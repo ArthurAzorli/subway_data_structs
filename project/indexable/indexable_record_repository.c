@@ -1,6 +1,6 @@
 #include "indexable_record_repository.h"
 
-#include "../services/file/file_repository.h"
+#include "../services/file_repository.h"
 #include <stdlib.h>
 
 bool IndexableRecordRepository_writeRecord(struct DataFile *dataFile, const struct IndexableRecord *record) {

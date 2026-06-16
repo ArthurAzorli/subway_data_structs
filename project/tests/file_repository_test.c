@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-#include "../services/file/file_repository.h"
+#include "../services/file_repository.h"
 
 /**
  * @brief Test suite for FileRepository functionality

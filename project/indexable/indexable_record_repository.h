@@ -4,7 +4,7 @@
 
 #ifndef INDEXABLE_RECORD_REPOSITORY_H
 #define INDEXABLE_RECORD_REPOSITORY_H
-#include "../services/file/file_repository.h"
+#include "../services/file_repository.h"
 #include <stdbool.h>
 #include <stdint.h>
 

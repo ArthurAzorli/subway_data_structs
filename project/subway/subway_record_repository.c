@@ -1,10 +1,11 @@
 #include "subway_record_repository.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../services/file/file_repository.h"
-#include "../services/utils/types.h"
+#include "../services/file_repository.h"
+#include "../services/types.h"
 
 
 #define TRASH 0x24
@@ -36,6 +37,34 @@ struct SubwayRecord *SubwayRecord_init() {
     record->lineNameLength = 0;
     record->lineName = NULL;
     return record;
+}
+
+/**
+ * @brief Displays a subway record in human-readable format.
+ *
+ * Prints all fields of a record, using "NULO" for empty/null values.
+ * Fields are space-separated on a single line.
+ *
+ * @param record: The record to display (must not be NULL)
+ */
+void SubwayRecord_print(const struct SubwayRecord *record) {
+    if (record == NULL) return;
+    printUint32(record->originStationID);
+    printf(" ");
+    printString(record->stationName);
+    printf(" ");
+    printUint32(record->originLineID);
+    printf(" ");
+    printString(record->lineName);
+    printf(" ");
+    printUint32(record->destinationStationID);
+    printf(" ");
+    printUint32(record->destinationDistant);
+    printf(" ");
+    printUint32(record->interactionLineID);
+    printf(" ");
+    printUint32(record->interactionStationID);
+    printf("\n");
 }
 
 /**
@@ -139,7 +168,7 @@ bool SubwayRecordRepository_readRecordData(struct DataFile *dataFile, struct Sub
         record->stationName = NULL;
         return false;
     }
-    const size_t remaining = RECORD_LENGTH - 37 - record->stationNameLength - record->lineNameLength;
+    const long remaining = RECORD_LENGTH - 37 - record->stationNameLength - record->lineNameLength;
     FileRepository_move(dataFile, remaining);
     return true;
 }

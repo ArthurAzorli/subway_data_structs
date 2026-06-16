@@ -2,7 +2,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 // ===== IndexableRecordAVL Private function ==== \\
 
@@ -57,6 +56,16 @@ struct IndexableRecordAVL* IndexableRecordAVL_leftRotation(struct IndexableRecor
   x->size = IndexableRecordAVL_calculateSize(x);
   return x;
 }
+
+bool IndexableRecordAVL_writeNode(struct DataFile *file, struct IndexableRecordAVL *node) {
+  if (file == NULL) return false;
+  if (node == NULL) return true;
+  if (!IndexableRecordAVL_writeNode(file, node->left)) return false;
+  if (!IndexableRecordRepository_writeRecord(file, node->record)) return false;
+  if (!IndexableRecordAVL_writeNode(file, node->right)) return false;
+  return true;
+}
+
 
 
 // ===== IndexableRecordAVL Public function ==== \\
@@ -160,4 +169,40 @@ void IndexableRecordAVL_free(struct IndexableRecordAVL *root) {
   IndexableRecordAVL_free(root->right);
   free(root->record);
   free(root);
+}
+
+struct IndexableRecordAVL * IndexableRecordAVL_readFromFile(const char *fileName) {
+  if (fileName == NULL) return NULL;
+
+  //open file
+  struct DataFile *file = FileRepository_openOrCreate(fileName, READ_ONLY);
+  if (file == NULL) return NULL;
+
+  //init params
+  struct IndexableRecordAVL *avl = NULL;
+  struct IndexableRecord *indexable = NULL;
+
+  //read all index until end file
+  while (true) {
+    if (!IndexableRecordRepository_readRecord(file, &indexable)) break;
+    avl = IndexableRecordAVL_push(avl, indexable);
+    free(indexable);
+  }
+
+  //close file and return result
+  FileRepository_close(file);
+  return avl;
+}
+
+bool IndexableRecordAVL_writeOnFile(const char *fileName, struct IndexableRecordAVL *root) {
+  //open output file
+  struct DataFile *file = FileRepository_openOrCreate(fileName, WRITE_ONLY);
+  if (file == NULL) return false;
+
+  //write each AVL indexable record in file
+  const bool result = IndexableRecordAVL_writeNode(file, root);
+
+  // close file and resturn result
+  FileRepository_close(file);
+  return result;
 }

@@ -1,6 +1,6 @@
 #include "input_repository.h"
 
-#include "../../services/utils/split.h"
+#include "../../services/split.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

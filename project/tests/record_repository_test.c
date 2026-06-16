@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../services/file/file_repository.h"
+#include "../services/file_repository.h"
 #include "../subway/subway_record_repository.h"
-#include "../services/utils/types.h"
+#include "../services/types.h"
 
 #define RECORD_LENGTH 80
 

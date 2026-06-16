@@ -1,11 +1,13 @@
 
 #ifndef RECORD_REPOSITORY_H
 #define RECORD_REPOSITORY_H
-#include "../services/file/file_repository.h"
+#include "../services/file_repository.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
+#define SUBWAY_RECORD_OFFSET 16
+#define SUBWAY_RECORD_SIZE 80
 
 /**
  * @struct SubwayRecord
@@ -26,6 +28,8 @@ struct SubwayRecord {
 };
 
 struct SubwayRecord *SubwayRecord_init();
+
+void SubwayRecord_print(const struct SubwayRecord* record);
 
 void SubwayRecord_free(struct SubwayRecord *record);
 

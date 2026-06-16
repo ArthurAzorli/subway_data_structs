@@ -1,7 +1,7 @@
 
 #ifndef SUBWAY_RECORD_LIST_H
 #define SUBWAY_RECORD_LIST_H
-#include "../subway/subway_record_repository.h"
+#include "subway_record_repository.h"
 
 #include <stdbool.h>
 #include <stdlib.h>

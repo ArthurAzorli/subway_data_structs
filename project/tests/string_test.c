@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "../services/utils/split.h"
+#include "../services/split.h"
 
 #include <stdio.h>
 

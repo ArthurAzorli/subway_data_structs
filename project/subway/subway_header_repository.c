@@ -1,6 +1,6 @@
 #include "subway_header_repository.h"
-#include "../services/file/file_repository.h"
-#include "../services/utils/types.h"
+#include "../services/file_repository.h"
+#include "../services/types.h"
 #include <stdlib.h>
 
 struct DataSubwayHeader * SubwayHeaderRepository_init() {

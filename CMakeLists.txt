@@ -9,21 +9,23 @@ add_executable(Trabalho01
         project/program.h
         project/program.c
         main.c
-        project/services/file/file_repository.c
-        project/services/file/file_repository.h
-        project/services/utils/split.h
-        project/services/utils/types.h
+        project/services/file_repository.c
+        project/services/file_repository.h
+        project/services/split.h
+        project/services/types.h
         project/subway/subway_header_repository.c
         project/subway/subway_header_repository.h
         project/subway/subway_record_repository.c
         project/subway/subway_record_repository.h
         project/subway/input/input_repository.c
         project/subway/input/input_repository.h
-        project/subway/search_criteria.h
-        project/lib/subway_record_list.c
-        project/lib/subway_record_list.h
-        project/lib/indexable_record_avl.c
-        project/lib/indexable_record_avl.h
+        project/subway/subway_record_list.c
+        project/subway/subway_record_list.h
+        project/indexable/indexable_record_avl.c
+        project/indexable/indexable_record_avl.h
         project/indexable/indexable_record_repository.c
         project/indexable/indexable_record_repository.h
+        project/services/search_service.c
+        project/services/search_service.h
+        project/services/types.c
 )

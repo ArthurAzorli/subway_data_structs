@@ -1,5 +1,5 @@
 #include "subway_record_list.h"
-#include "../subway/subway_record_repository.h"
+#include "subway_record_repository.h"
 #include <stdlib.h>
 #include <string.h>
 

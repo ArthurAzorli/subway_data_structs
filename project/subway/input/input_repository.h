@@ -11,7 +11,7 @@
 #define TRABALHO01_INPUT_REPOSITORY_H
 
 #include "../subway_record_repository.h"
-#include "../../services/utils/types.h"
+#include "../../services/types.h"
 
 struct InputFile;
 

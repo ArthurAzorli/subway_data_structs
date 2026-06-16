@@ -55,10 +55,9 @@ int main() {
             if (!Program_updateRecord()) printf("Falha no processamento do arquivo.\n");
             break;
         }
-        default:
-
-
-
+        default: {
+            return 1;
+        }
     }
     return 0;
 }

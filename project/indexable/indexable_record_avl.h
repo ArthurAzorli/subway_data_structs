@@ -1,7 +1,7 @@
 #ifndef INDEXABLE_RECORD_AVL_H
 #define INDEXABLE_RECORD_AVL_H
 
-#include "../indexable/indexable_record_repository.h"
+#include "indexable_record_repository.h"
 #include <stddef.h>
 
 struct IndexableRecordAVL{
@@ -17,6 +17,9 @@ struct IndexableRecordAVL *IndexableRecordAVL_remove(struct IndexableRecordAVL *
 struct IndexableRecord *IndexableRecordAVL_getByStationID(const struct IndexableRecordAVL *root, uint32_t stationID);
 struct IndexableRecord *IndexableRecordAVL_getByIndex(const struct IndexableRecordAVL *root, size_t index);
 void IndexableRecordAVL_free(struct IndexableRecordAVL *root);
+
+struct IndexableRecordAVL *IndexableRecordAVL_readFromFile(const char *fileName);
+bool IndexableRecordAVL_writeOnFile(const char *fileName, struct IndexableRecordAVL *root);
 
 
 #endif //INDEXABLE_RECORD_AVL_H

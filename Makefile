@@ -7,13 +7,15 @@ INCLUDES = -I.
 # Source files (list explicitly)
 SRC = main.c \
       project/program.c \
-      project/services/file/file_repository.c \
+      project/services/file_repository.c \
+      project/services/search_service.c \
+      project/services/types.c \
       project/lib/provided.c \
-      project/lib/subway_record_list.c \
-      project/lib/indexable_record_avl.c \
+      project/subway/subway_record_list.c \
       project/subway/subway_header_repository.c \
       project/subway/subway_record_repository.c \
       project/subway/input/input_repository.c \
+      project/indexable/indexable_record_avl.c \
       project/indexable/indexable_record_repository.c
 
 

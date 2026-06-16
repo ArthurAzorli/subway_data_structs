@@ -1,12 +1,14 @@
 #include "program.h"
-#include "services/file/file_repository.h"
+#include "services/file_repository.h"
+#include "services/search_service.h"
+#include "services/types.h"
 #include "subway/subway_header_repository.h"
 #include "subway/subway_record_repository.h"
 #include "subway/input/input_repository.h"
-#include "subway/search_criteria.h"
-#include "lib/subway_record_list.h"
-#include "lib/indexable_record_avl.h"
+#include "subway/subway_record_list.h"
+#include "indexable/indexable_record_avl.h"
 #include "lib/provided.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,8 +16,6 @@
 
 #define INPUT_MAX_LENGTH 101
 #define SUBWAY_HEADER_OFFSET 0
-#define SUBWAY_RECORD_OFFSET 16
-#define SUBWAY_RECORD_SIZE 80
 
 
 // ===== Private Program Functions ===== \\
@@ -47,292 +47,6 @@ void Program_countStations(
         }
     }
     free(other);
-}
-
-/**
- * @brief Prints an unsigned 32-bit integer value.
- *
- * Displays the numeric value if it is not EMPTY. If the value is equal to EMPTY,
- * prints "NULO" instead. Used to standardize the output of integer fields in records.
- *
- * @param value: The unsigned 32-bit integer to print
- */
-void Program_printUint32(const uint32_t value) {
-    if (value == EMPTY) {
-        printf("NULO");
-    } else {
-        printf("%d", value);
-    }
-}
-
-
-/**
- * @brief Prints a string value.
- *
- * Displays the string if it is not NULL. If the string pointer is NULL,
- * prints "NULO" instead. Used to standardize the output of string fields in records.
- *
- * @param value: The string to print (can be NULL)
- */
-void Program_printString(const char *value) {
-    if (value == NULL) {
-        printf("NULO");
-    } else {
-        printf("%s", value);
-    }
-}
-
-/**
- * @brief Displays a subway record in human-readable format.
- *
- * Prints all fields of a record, using "NULO" for empty/null values.
- * Fields are space-separated on a single line.
- *
- * @param record: The record to display (must not be NULL)
- */
-void Program_printRecord(const struct SubwayRecord *record) {
-    Program_printUint32(record->originStationID);
-    printf(" ");
-    Program_printString(record->stationName);
-    printf(" ");
-    Program_printUint32(record->originLineID);
-    printf(" ");
-    Program_printString(record->lineName);
-    printf(" ");
-    Program_printUint32(record->destinationStationID);
-    printf(" ");
-    Program_printUint32(record->destinationDistant);
-    printf(" ");
-    Program_printUint32(record->interactionLineID);
-    printf(" ");
-    Program_printUint32(record->interactionStationID);
-    printf("\n");
-}
-
-
-uint32_t Program_parseUint32(const char *value) {
-    if (value == NULL || strcmp(value, "") == 0 || strcmp(value, "NULO") == 0) return EMPTY;
-    char *endptr;
-    const long converted = strtol(value, &endptr, 10);
-    if (*endptr != '\0') return EMPTY;
-    return (uint32_t) converted;
-}
-
-/**
- * @brief Compares a string field value with a search string.
- *
- * Treats empty string as NULL. Returns true if both are NULL or if the record string
- * matches the search string exactly.
- *
- * @param recordValue: The string value from the record field to compare
- * @param value: The string value to compare against
- * @return true if values match, false otherwise
- */
-bool Program_cmpString(const char *recordValue, const char *value) {
-    if (value == NULL || strcmp(value, "") == 0) {
-        return recordValue == NULL;
-    } else {
-        return recordValue != NULL && strcmp(recordValue, value) == 0;
-    }
-}
-
-/**
- * @brief Reads an integer from stdin and stores it as a string.
- *
- * Attempts to capture the next whitespace-delimited input from the user
- * and place it into the provided buffer. This allows numeric values or
- * the keyword "NULO" to be handled uniformly as strings for later parsing.
- * If the read fails, the buffer is set to an empty string to avoid
- * undefined content.
- *
- * @param value: Pointer to the character buffer where the input will be stored
- */
-void Program_readIntAsString(char *value) {
-    if (scanf("%s", value) != 1) {
-        strcpy(value, "");
-    }
-}
-
-struct IndexableRecordAVL *Program_readIndexableAVL(const char *fileName) {
-    if (fileName == NULL) return NULL;
-
-    struct IndexableRecordAVL *avl = NULL;
-    struct DataFile *file = FileRepository_openOrCreate(fileName, READ_ONLY);
-    if (file == NULL) return NULL;
-
-    struct IndexableRecord *indexable = NULL;
-    while (true) {
-        if (!IndexableRecordRepository_readRecord(file, &indexable)) break;
-        avl = IndexableRecordAVL_push(avl, indexable);
-        free(indexable);
-    }
-
-    return avl;
-}
-
-bool Program_readSearchCriteria(struct SearchCriteria *criteria, size_t *criteriaCount, bool *searchByID) {
-    // Reads the number of criteria for the search
-    if (scanf("%zu", criteriaCount) != 1) return false;
-    *searchByID = false;
-
-    // Reads the criteria for the search
-    uint32_t position = 0;
-    for (uint32_t j = 0; j < *criteriaCount; j++) {
-        // Reads the search field
-        char field[INPUT_MAX_LENGTH];
-        if (scanf("%s", field) != 1) return false;
-
-        // Defines which field the search criteria refers to and reads the criteria's value type (string with "" or integer as string)
-        if (strcmp(field, "codEstacao") == 0) {
-            *searchByID = true;
-            criteria[*criteriaCount - 1].field = StationID;
-            Program_readIntAsString(criteria[*criteriaCount - 1].value);
-        } else if (strcmp(field, "nomeEstacao") == 0) {
-            criteria[position].field = StationName;
-            ScanQuoteString(criteria[position++].value);
-        } else if (strcmp(field, "codLinha") == 0) {
-            criteria[position].field = LineID;
-            Program_readIntAsString(criteria[position++].value);
-        } else if (strcmp(field, "nomeLinha") == 0) {
-            criteria[position].field = LineName;
-            ScanQuoteString(criteria[position++].value);
-        } else if (strcmp(field, "codProxEstacao") == 0) {
-            criteria[position].field = DestinationStationID;
-            Program_readIntAsString(criteria[position++].value);
-        } else if (strcmp(field, "distProxEstacao") == 0) {
-            criteria[position].field = Distant;
-            Program_readIntAsString(criteria[position++].value);
-        } else if (strcmp(field, "codEstIntegra") == 0) {
-            criteria[position].field = InteractionStationID;
-            Program_readIntAsString(criteria[position++].value);
-        } else if (strcmp(field, "codLinhaIntegra") == 0) {
-            criteria[position].field = InteractionLineID;
-            Program_readIntAsString(criteria[position++].value);
-        } else {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool Program_recordMatchesCriteria(const struct SubwayRecord *record, struct SearchCriteria *criteria,
-                                   size_t criteriaCount) {
-    if (record == NULL || criteria == NULL) return false;
-
-    for (size_t j = 0; j < criteriaCount; j++) {
-        const char *value = criteria[j].value;
-        bool match = false;
-
-        switch (criteria[j].field) {
-            case StationID: {
-                const uint32_t stationID = Program_parseUint32(value);
-                match = record->originStationID == stationID;
-                break;
-            }
-            case StationName: {
-                match = Program_cmpString(record->stationName, value);
-                break;
-            }
-            case LineID: {
-                const uint32_t lineID = Program_parseUint32(value);
-                match = record->originLineID == lineID;
-                break;
-            }
-            case LineName: {
-                match = Program_cmpString(record->lineName, value);
-                break;
-            }
-            case DestinationStationID: {
-                const uint32_t destinationStationID = Program_parseUint32(value);
-                match = destinationStationID == record->destinationStationID;
-                break;
-            }
-            case Distant: {
-                const uint32_t distant = Program_parseUint32(value);
-                match = distant == record->destinationDistant;
-                break;
-            }
-            case InteractionStationID: {
-                const uint32_t interactionStationID = Program_parseUint32(value);
-                match = interactionStationID == record->interactionStationID;
-                break;
-            }
-            case InteractionLineID: {
-                const uint32_t interactionLineID = Program_parseUint32(value);
-                match = interactionLineID == record->interactionLineID;
-                break;
-            }
-            default:
-                match = false;
-                break;
-        }
-
-        if (!match) return false;
-    }
-
-    return true;
-}
-
-
-bool Program_searchCriteriaByIndexable(const struct DataSubwayHeader *header, struct DataFile *file,
-                                       const struct IndexableRecordAVL *avl,
-                                       struct SubwayRecordList *subwayList) {
-    if (file == NULL || avl == NULL || subwayList == NULL) return false;
-
-    // Reads  criteria for the search
-    bool searchByID;
-    size_t criteriaCount;
-    struct SearchCriteria *criteria = calloc(8, sizeof(struct SearchCriteria));
-    if (criteria == NULL) return false;
-
-    if (!Program_readSearchCriteria(criteria, &criteriaCount, &searchByID)) {
-        free(criteria);
-        return false;
-    }
-
-    if (searchByID) {
-        const uint32_t stationID = Program_parseUint32(criteria[criteriaCount - 1].value);
-
-        const struct IndexableRecord *indexable = IndexableRecordAVL_getByStationID(avl, stationID);
-        if (indexable == NULL) {
-            free(criteria);
-            return true;
-        }
-
-        const uint32_t byteOffset = indexable->rrn * SUBWAY_RECORD_SIZE + SUBWAY_RECORD_OFFSET;
-        FileRepository_goto(file, (long) byteOffset);
-        struct SubwayRecord *record = SubwayRecordRepository_readRecord(file);
-        if (record == NULL) {
-            free(criteria);
-            return false;
-        }
-
-        //verify if fields matches without station ID
-        if (Program_recordMatchesCriteria(record, criteria, criteriaCount - 1)) {
-            record->rrn = indexable->rrn;
-            SubwayRecordList_add(subwayList, record);
-        }
-
-        SubwayRecord_free(record);
-    } else {
-        // Iterates through all records in database
-        for (uint32_t i = 0; i < header->nextInsert; i++) {
-            struct SubwayRecord *record = SubwayRecordRepository_readRecord(file);
-            if (record == NULL) continue; // removed or invalid
-
-            // Checks each record field present in the search criteria
-            // If any do not match, skip to the next record, else add it
-            if (Program_recordMatchesCriteria(record, criteria, criteriaCount)) {
-                record->rrn = i;
-                SubwayRecordList_add(subwayList, record);
-            }
-            SubwayRecord_free(record);
-        }
-
-    }
-
-    free(criteria);
-    return true;
 }
 
 
@@ -458,7 +172,7 @@ bool Program_showRecords() {
     for (size_t i = 0; i < header->nextInsert; i++) {
         struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
         if (record == NULL) continue;
-        Program_printRecord(record);
+        SubwayRecord_print(record);
         SubwayRecord_free(record);
     }
 
@@ -489,53 +203,46 @@ bool Program_searchRecord() {
 
     // Performs n searches
     for (uint32_t i = 0; i < searchesCount; i++) {
-        bool printedAny = false;
-
-        // Reads  criteria for the search
-        bool searchByID;
-        size_t criteriaCount;
-        struct SearchCriteria *criteria = calloc(8, sizeof(struct SearchCriteria));
-        if (criteria == NULL) {
+        struct SubwayRecordList *result = SubwayRecordList_init();
+        if (result == NULL) {
             FileRepository_close(dataFile);
             free(header);
             return false;
         }
 
-        if (!Program_readSearchCriteria(criteria, &criteriaCount, &searchByID)) {
+        //do sequencial search
+        if (!SearchService_sequencialSearch(header, dataFile, result)) {
+            SubwayRecordList_free(result);
             FileRepository_close(dataFile);
             free(header);
-            free(criteria);
             return false;
         }
 
-        // Iterates through all records in database
-        for (uint32_t j = 0; j < header->nextInsert; j++) {
-            struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
-            if (record == NULL) continue; // removed or invalid
-
-            // Checks each record field present in the search criteria
-            // If any do not match, skip to the next record
-            const bool match = Program_recordMatchesCriteria(record, criteria, criteriaCount);
-
-            if (match) {
-                Program_printRecord(record);
-                printedAny = true;
+        //print all records returned
+        const size_t size = SubwayRecordList_getSize(result);
+        for (size_t j = 0; j < size; j++) {
+            struct SubwayRecord *record = SubwayRecord_init();
+            if (!SubwayRecordList_get(result, j, record)) {
+                SubwayRecord_free(record);
+                SubwayRecordList_free(result);
+                FileRepository_close(dataFile);
+                free(header);
+                return false;
             }
-
+            SubwayRecord_print(record);
             SubwayRecord_free(record);
-            //stop search when found stationID
-            if (match && searchByID) break;
         }
 
         // If there are no records founded, print message
-        if (!printedAny) printf("Registro inexistente.\n");
+        if (size == 0) printf("Registro inexistente.\n");
 
-
+        // go to initial byte offset to a new search
         if (i < searchesCount - 1) {
             FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
             printf("\n");
         }
-        free(criteria);
+
+        SubwayRecordList_free(result);
     }
 
     // close file and finish memory
@@ -574,7 +281,7 @@ bool Program_getRecordByRRN() {
     if (record == NULL) {
         printf("Registro inexistente.\n");
     } else {
-        Program_printRecord(record);
+        SubwayRecord_print(record);
         SubwayRecord_free(record);
     }
 
@@ -624,28 +331,14 @@ bool Program_initIndexableFile() {
         return false;
     }
 
-    //open output file
-    struct DataFile *outputFile = FileRepository_openOrCreate(outputFilePath, WRITE_ONLY);
-    if (outputFile == NULL) {
+    //write index on output file
+    if (!IndexableRecordAVL_writeOnFile(outputFilePath, avl)) {
         IndexableRecordAVL_free(avl);
         free(header);
         return false;
     }
 
-    //write each AVL indexable record in file
-    for (size_t i = 0; i < avl->size; i++) {
-        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
-        if (index == NULL) continue;
-        if (!IndexableRecordRepository_writeRecord(outputFile, index)) {
-            FileRepository_close(outputFile);
-            IndexableRecordAVL_free(avl);
-            free(header);
-            return false;
-        }
-    }
-
     //close outputfile and free memory
-    FileRepository_close(outputFile);
     IndexableRecordAVL_free(avl);
     free(header);
 
@@ -663,7 +356,7 @@ bool Program_searchRecordByIndexable() {
     // If there are no searches, do nothing
     if (searchesCount == 0) return true;
 
-    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    struct IndexableRecordAVL *avl = IndexableRecordAVL_readFromFile(indexFilePath);
     if (avl == NULL) return false;
 
     //open output file
@@ -691,7 +384,8 @@ bool Program_searchRecordByIndexable() {
             return false;
         }
 
-        if (!Program_searchCriteriaByIndexable(header, dataFile, avl, result)) {
+        // do indexable search
+        if (!SearchService_indexableSearch(header, dataFile, avl, result)) {
             SubwayRecordList_free(result);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
@@ -699,26 +393,36 @@ bool Program_searchRecordByIndexable() {
             return false;
         }
 
-        const size_t resultCounts = SubwayRecordList_getSize(result);
-        if (resultCounts > 0) {
-            for (size_t j = 0; j < resultCounts; j++) {
-                struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
-                if (!SubwayRecordList_get(result, j, record)) continue;
-                Program_printRecord(record);
+        //print all records returned
+        const size_t size = SubwayRecordList_getSize(result);
+        for (size_t j = 0; j < size; j++) {
+            struct SubwayRecord *record = SubwayRecord_init();
+            if (!SubwayRecordList_get(result, j, record)) {
                 SubwayRecord_free(record);
+                SubwayRecordList_free(result);
+                IndexableRecordAVL_free(avl);
+                FileRepository_close(dataFile);
+                free(header);
+                return false;
             }
-        } else {
-            printf("Registro inexistente.\n");
+            SubwayRecord_print(record);
+            SubwayRecord_free(record);
         }
 
+        // If there are no records founded, print message
+        if (size == 0) printf("Registro inexistente.\n");
 
+        // go to initial byte offset to a new search
         if (i < searchesCount - 1) {
             FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
             printf("\n");
         }
+
+        SubwayRecordList_free(result);
     }
 
     // close file and finish memory
+    IndexableRecordAVL_free(avl);
     FileRepository_close(dataFile);
     free(header);
     return true;
@@ -733,7 +437,7 @@ bool Program_removeRecords() {
     // If there are no searches, do nothing
     if (searchesCount == 0) return true;
 
-    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    struct IndexableRecordAVL *avl = IndexableRecordAVL_readFromFile(indexFilePath);
     if (avl == NULL) return false;
 
     //open output file
@@ -751,15 +455,16 @@ bool Program_removeRecords() {
         return false;
     }
 
+    //read all records to update header
     struct SubwayRecordList *subwayList = SubwayRecordList_init();
     for (uint32_t i = 0; i < header->nextInsert; i++) {
         struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
         if (record == NULL) continue; // removed or invalid
-
         SubwayRecordList_add(subwayList, record);
         SubwayRecord_free(record);
     }
 
+    //go to initial byteOffset
     FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
 
 
@@ -767,13 +472,16 @@ bool Program_removeRecords() {
     for (uint32_t i = 0; i < searchesCount; i++) {
         struct SubwayRecordList *result = SubwayRecordList_init();
         if (result == NULL) {
+            SubwayRecordList_free(subwayList);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
             free(header);
             return false;
         }
 
-        if (!Program_searchCriteriaByIndexable(header, dataFile, avl, result)) {
+        //do indexable search
+        if (!SearchService_indexableSearch(header, dataFile, avl, result)) {
+            SubwayRecordList_free(subwayList);
             SubwayRecordList_free(result);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
@@ -782,23 +490,41 @@ bool Program_removeRecords() {
         }
 
         const size_t resultCounts = SubwayRecordList_getSize(result);
-
         for (size_t j = 0; j < resultCounts; j++) {
-            struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
-            if (!SubwayRecordList_get(result, j, record)) continue;
+            struct SubwayRecord *record = SubwayRecord_init();
+            if (!SubwayRecordList_get(result, j, record)) {
+                SubwayRecord_free(record);
+                SubwayRecordList_free(subwayList);
+                SubwayRecordList_free(result);
+                IndexableRecordAVL_free(avl);
+                FileRepository_close(dataFile);
+                free(header);
+                return false;
+            }
 
+            //go to record byteOffset
             const uint32_t byteOffset = record->rrn * SUBWAY_RECORD_SIZE + SUBWAY_RECORD_OFFSET;
             FileRepository_goto(dataFile, (long) byteOffset);
 
-            //logic remove record on file and remove on list and avl
-            SubwayRecordRepository_removeRecord(dataFile, header->lastRemoved);
+            //logic remove record on file
+            if (!SubwayRecordRepository_removeRecord(dataFile, header->lastRemoved)) {
+                SubwayRecord_free(record);
+                SubwayRecordList_free(subwayList);
+                SubwayRecordList_free(result);
+                IndexableRecordAVL_free(avl);
+                FileRepository_close(dataFile);
+                free(header);
+                return false;
+            }
+            //remove record from list and avl
             SubwayRecordList_removeByStationID(subwayList, record->originStationID);
-            IndexableRecordAVL_remove(avl, record->originStationID);
+            avl = IndexableRecordAVL_remove(avl, record->originStationID);
 
+            //calculate stations and pairs count
             uint32_t stationsCount = 0, pairStationsCount = 0;
             Program_countStations(subwayList, record, &stationsCount, &pairStationsCount);
 
-            //update header
+            //update header fields
             header->lastRemoved = record->rrn;
             if (stationsCount == 0) header->stationsCount--;
             if (record->destinationStationID != EMPTY && pairStationsCount == 0) header->pairStationsCount--;
@@ -806,40 +532,33 @@ bool Program_removeRecords() {
             SubwayRecord_free(record);
         }
 
+        // go to initial byte offset to a new search
+        if (i < searchesCount - 1) FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
 
-        if (i < searchesCount - 1) {
-            FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
-        }
+        SubwayRecordList_free(result);
     }
 
-    FileRepository_goto(dataFile, 0);
-    SubwayHeaderRepository_write(header, dataFile);
+    SubwayRecordList_free(subwayList);
 
+    //go to header offset and write it
+    FileRepository_goto(dataFile, SUBWAY_HEADER_OFFSET);
+    if (!SubwayHeaderRepository_write(header, dataFile)) {
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(dataFile);
+        free(header);
+        return false;
+    }
 
     // close file and finish memory
     FileRepository_close(dataFile);
     free(header);
 
-    //open output file
-    struct DataFile *indexFile = FileRepository_openOrCreate(indexFilePath, WRITE_ONLY);
-    if (indexFile == NULL) {
+    //write index file
+    if (!IndexableRecordAVL_writeOnFile(indexFilePath, avl)) {
         IndexableRecordAVL_free(avl);
         return false;
     }
 
-    //write each AVL indexable record in file
-    for (size_t i = 0; i < avl->size; i++) {
-        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
-        if (index == NULL) continue;
-        if (!IndexableRecordRepository_writeRecord(indexFile, index)) {
-            FileRepository_close(indexFile);
-            IndexableRecordAVL_free(avl);
-            return false;
-        }
-    }
-
-    // close file and finish memory
-    FileRepository_close(indexFile);
     IndexableRecordAVL_free(avl);
 
     //print binary
@@ -849,15 +568,15 @@ bool Program_removeRecords() {
 }
 
 bool Program_insertRecord() {
-    //read files paths and searches count
-    uint32_t searchesCount;
+    //read files paths and inserts count
+    uint32_t insertsCount;
     char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
-    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &insertsCount) != 3) return false;
 
     // If there are no searches, do nothing
-    if (searchesCount == 0) return true;
+    if (insertsCount == 0) return true;
 
-    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    struct IndexableRecordAVL *avl = IndexableRecordAVL_readFromFile(indexFilePath);
     if (avl == NULL) return false;
 
     //open output file
@@ -875,54 +594,64 @@ bool Program_insertRecord() {
         return false;
     }
 
+    //read all records to update header
     struct SubwayRecordList *subwayList = SubwayRecordList_init();
     for (uint32_t i = 0; i < header->nextInsert; i++) {
         struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
         if (record == NULL) continue; // removed or invalid
-
         SubwayRecordList_add(subwayList, record);
         SubwayRecord_free(record);
     }
 
-    for (uint32_t i = 0; i < searchesCount; i++) {
+    for (uint32_t i = 0; i < insertsCount; i++) {
         struct SubwayRecord *record = SubwayRecord_init();
         if (record == NULL) {
-            FileRepository_close(dataFile);
             SubwayRecordList_free(subwayList);
             IndexableRecordAVL_free(avl);
+            FileRepository_close(dataFile);
             free(header);
             return false;
         }
 
+        //read each record field
         char stationID[INPUT_MAX_LENGTH], lineID[INPUT_MAX_LENGTH], destinationID[INPUT_MAX_LENGTH];
         char distance[INPUT_MAX_LENGTH], interationStationID[INPUT_MAX_LENGTH], interactionLineID[INPUT_MAX_LENGTH];
 
-        Program_readIntAsString(stationID);
-        record->originStationID = Program_parseUint32(stationID);
+        //read station ID
+        readIntAsString(stationID);
+        record->originStationID = parseUint32(stationID);
 
+        //read station name
         record->stationName = calloc(INPUT_MAX_LENGTH, sizeof(char));
         ScanQuoteString(record->stationName);
         record->stationNameLength = strlen(record->stationName);
 
-        Program_readIntAsString(lineID);
-        record->originLineID = Program_parseUint32(lineID);
+        //read line ID
+        readIntAsString(lineID);
+        record->originLineID = parseUint32(lineID);
 
+        //read line name
         record->lineName = calloc(INPUT_MAX_LENGTH, sizeof(char));
         ScanQuoteString(record->lineName);
         record->lineNameLength = strlen(record->lineName);
 
-        Program_readIntAsString(destinationID);
-        record->destinationStationID = Program_parseUint32(destinationID);
+        //read destination station ID
+        readIntAsString(destinationID);
+        record->destinationStationID = parseUint32(destinationID);
 
-        Program_readIntAsString(distance);
-        record->destinationDistant = Program_parseUint32(distance);
+        //read destination distance
+        readIntAsString(distance);
+        record->destinationDistant = parseUint32(distance);
 
-        Program_readIntAsString(interationStationID);
-        record->interactionStationID = Program_parseUint32(interationStationID);
+        //read interaction station ID
+        readIntAsString(interationStationID);
+        record->interactionStationID = parseUint32(interationStationID);
 
-        Program_readIntAsString(interactionLineID);
-        record->interactionLineID = Program_parseUint32(interactionLineID);
+        //read interaction line ID
+        readIntAsString(interactionLineID);
+        record->interactionLineID = parseUint32(interactionLineID);
 
+        //If has a removed station reuse its rrn, else add on end file
         if (header->lastRemoved == EMPTY) {
             const long byteOffset = SUBWAY_RECORD_SIZE * header->nextInsert + SUBWAY_RECORD_OFFSET;
             FileRepository_goto(dataFile, byteOffset);
@@ -933,72 +662,66 @@ bool Program_insertRecord() {
             FileRepository_goto(dataFile, byteOffset);
             record->rrn = header->lastRemoved;
 
+            //read next rrn removed to pile top
             if (!SubwayRecordRepository_readNextRemoved(dataFile, &header->lastRemoved)) {
-                FileRepository_close(dataFile);
+                SubwayRecord_free(record);
                 SubwayRecordList_free(subwayList);
                 IndexableRecordAVL_free(avl);
+                FileRepository_close(dataFile);
                 free(header);
-                free(record);
                 return false;
             }
 
             FileRepository_goto(dataFile, byteOffset);
-            struct IndexableRecord index = {header->nextInsert, record->originStationID};
-            IndexableRecordAVL_push(avl, &index);
         }
 
+        //write new record fields
         if (!SubwayRecordRepository_writeRecord(dataFile, record)) {
-            FileRepository_close(dataFile);
+            SubwayRecord_free(record);
             SubwayRecordList_free(subwayList);
             IndexableRecordAVL_free(avl);
+            FileRepository_close(dataFile);
             free(header);
-            free(record);
             return false;
         }
 
+        //calculate stations and pairs count
         uint32_t stationsCount = 0, pairStationsCount = 0;
         Program_countStations(subwayList, record, &stationsCount, &pairStationsCount);
 
-        //update header
+        //update header fields
         if (stationsCount == 0) header->stationsCount++;
         if (record->destinationStationID != EMPTY && pairStationsCount == 0) header->pairStationsCount++;
 
-        SubwayRecordList_add(subwayList, record);
+        //add record on list and overwrite record index
         struct IndexableRecord index = {record->rrn, record->originStationID};
         IndexableRecordAVL_remove(avl, record->originStationID);
         IndexableRecordAVL_push(avl, &index);
+        SubwayRecordList_add(subwayList, record);
 
-        free(record);
+        SubwayRecord_free(record);
     }
 
-    FileRepository_goto(dataFile, 0);
-    SubwayHeaderRepository_write(header, dataFile);
+    //go to header offset and write it
+    FileRepository_goto(dataFile, SUBWAY_HEADER_OFFSET);
+    if (!SubwayHeaderRepository_write(header, dataFile)) {
+        SubwayRecordList_free(subwayList);
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(dataFile);
+        free(header);
+        return false;
+    }
 
     FileRepository_close(dataFile);
     SubwayRecordList_free(subwayList);
     free(header);
 
-
-    //open output file
-    struct DataFile *indexFile = FileRepository_openOrCreate(indexFilePath, WRITE_ONLY);
-    if (indexFile == NULL) {
+    //write index file
+    if (!IndexableRecordAVL_writeOnFile(indexFilePath, avl)) {
         IndexableRecordAVL_free(avl);
         return false;
     }
 
-    //write each AVL indexable record in file
-    for (size_t i = 0; i < avl->size; i++) {
-        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
-        if (index == NULL) continue;
-        if (!IndexableRecordRepository_writeRecord(indexFile, index)) {
-            FileRepository_close(indexFile);
-            IndexableRecordAVL_free(avl);
-            return false;
-        }
-    }
-
-    // close file and finish memory
-    FileRepository_close(indexFile);
     IndexableRecordAVL_free(avl);
 
     //print binary
@@ -1017,7 +740,7 @@ bool Program_updateRecord() {
     // If there are no searches, do nothing
     if (searchesCount == 0) return true;
 
-    struct IndexableRecordAVL *avl = Program_readIndexableAVL(indexFilePath);
+    struct IndexableRecordAVL *avl = IndexableRecordAVL_readFromFile(indexFilePath);
     if (avl == NULL) return false;
 
     //open output file
@@ -1035,27 +758,32 @@ bool Program_updateRecord() {
         return false;
     }
 
+    //read all records to update header
     struct SubwayRecordList *subwayList = SubwayRecordList_init();
     for (uint32_t i = 0; i < header->nextInsert; i++) {
         struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
         if (record == NULL) continue; // removed or invalid
-
         SubwayRecordList_add(subwayList, record);
         SubwayRecord_free(record);
     }
 
+    //go to initial byteOffset
+    FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+
     // Performs n searches
     for (uint32_t i = 0; i < searchesCount; i++) {
-        FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
         struct SubwayRecordList *result = SubwayRecordList_init();
         if (result == NULL) {
+            SubwayRecordList_free(subwayList);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
             free(header);
             return false;
         }
 
-        if (!Program_searchCriteriaByIndexable(header, dataFile, avl, result)) {
+        //do indexable search
+        if (!SearchService_indexableSearch(header, dataFile, avl, result)) {
+            SubwayRecordList_free(subwayList);
             SubwayRecordList_free(result);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
@@ -1063,11 +791,13 @@ bool Program_updateRecord() {
             return false;
         }
 
-        // Reads  criteria for the search
-        bool searchByID;
-        size_t criteriaCount;
-        struct SearchCriteria *criteria = calloc(8, sizeof(struct SearchCriteria));
-        if (criteria == NULL) {
+        bool hasStationID;
+        size_t fieldsCount;
+
+        //init fields list
+        struct SubwayFieldValue *fields = calloc(FIELDS_MAX_COUNT, sizeof(struct SubwayFieldValue));
+        if (fields == NULL) {
+            SubwayRecordList_free(subwayList);
             SubwayRecordList_free(result);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
@@ -1075,49 +805,60 @@ bool Program_updateRecord() {
             return false;
         }
 
-
-        if (!Program_readSearchCriteria(criteria, &criteriaCount, &searchByID)) {
+        // Reads search fields criteria
+        if (!SearchService_readSubwayFields(fields, &fieldsCount, &hasStationID)) {
             SubwayRecordList_free(result);
             IndexableRecordAVL_free(avl);
             FileRepository_close(dataFile);
             free(header);
-            free(criteria);
+            free(fields);
             return false;
         }
 
-        if (criteriaCount == 0) {
+        // nobody will update
+        if (fieldsCount == 0) {
             SubwayRecordList_free(result);
-            IndexableRecordAVL_free(avl);
-            FileRepository_close(dataFile);
-            free(header);
-            free(criteria);
-            return true;
+            free(fields);
+            continue;
         }
 
         const size_t resultCounts = SubwayRecordList_getSize(result);
-
         for (size_t j = 0; j < resultCounts; j++) {
-            struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
-            if (!SubwayRecordList_get(result, j, record)) continue;
+            struct SubwayRecord *record = SubwayRecord_init();
+            if (!SubwayRecordList_get(result, j, record)) {
+                SubwayRecord_free(record);
+                SubwayRecordList_free(subwayList);
+                SubwayRecordList_free(result);
+                IndexableRecordAVL_free(avl);
+                FileRepository_close(dataFile);
+                free(header);
+                free(fields);
+                return false;
+            }
 
+            //go to record byteOffset
             const uint32_t byteOffset = record->rrn * SUBWAY_RECORD_SIZE + SUBWAY_RECORD_OFFSET;
             FileRepository_goto(dataFile, (long) byteOffset);
 
-            if (searchByID) IndexableRecordAVL_remove(avl, record->originStationID);
+            //remove record from list and index from avl (if has station ID on updated fields)
+            if (hasStationID) IndexableRecordAVL_remove(avl, record->originStationID);
             SubwayRecordList_removeByStationID(subwayList, record->originStationID);
 
+            //calculate stations and pairs count when removed old record fields
             uint32_t oldStationsCount = 0, oldPairStationsCount = 0;
             Program_countStations(subwayList, record, &oldStationsCount, &oldPairStationsCount);
 
+            //update header fields
             if (oldStationsCount == 0) header->stationsCount--;
             if (record->destinationStationID != EMPTY && oldPairStationsCount == 0) header->pairStationsCount--;
 
-            for (size_t k = 0; k < criteriaCount; k++) {
-                const char *value = criteria[k].value;
+            //update record fields values
+            for (size_t k = 0; k < fieldsCount; k++) {
+                const char *value = fields[k].value;
 
-                switch (criteria[k].field) {
+                switch (fields[k].field) {
                     case StationID: {
-                        const uint32_t stationID = Program_parseUint32(value);
+                        const uint32_t stationID = parseUint32(value);
                         record->originStationID = stationID;
                         break;
                     }
@@ -1128,7 +869,7 @@ bool Program_updateRecord() {
                         break;
                     }
                     case LineID: {
-                        const uint32_t lineID = Program_parseUint32(value);
+                        const uint32_t lineID = parseUint32(value);
                         record->originLineID = lineID;
                         break;
                     }
@@ -1140,22 +881,22 @@ bool Program_updateRecord() {
                         break;
                     }
                     case DestinationStationID: {
-                        const uint32_t destinationStationID = Program_parseUint32(value);
+                        const uint32_t destinationStationID = parseUint32(value);
                         record->destinationStationID = destinationStationID;
                         break;
                     }
                     case Distant: {
-                        const uint32_t distant = Program_parseUint32(value);
+                        const uint32_t distant = parseUint32(value);
                         record->destinationDistant = distant;
                         break;
                     }
                     case InteractionStationID: {
-                        const uint32_t interactionStationID = Program_parseUint32(value);
+                        const uint32_t interactionStationID = parseUint32(value);
                         record->interactionStationID = interactionStationID;
                         break;
                     }
                     case InteractionLineID: {
-                        const uint32_t interactionLineID = Program_parseUint32(value);
+                        const uint32_t interactionLineID = parseUint32(value);
                         record->interactionLineID = interactionLineID;
                         break;
                     }
@@ -1164,16 +905,29 @@ bool Program_updateRecord() {
                 }
             }
 
+            //write new values record on file
+            if (!SubwayRecordRepository_writeRecord(dataFile, record)) {
+                SubwayRecord_free(record);
+                SubwayRecordList_free(subwayList);
+                SubwayRecordList_free(result);
+                IndexableRecordAVL_free(avl);
+                FileRepository_close(dataFile);
+                free(header);
+                free(fields);
+                return false;
+            }
 
-            SubwayRecordRepository_writeRecord(dataFile, record);
+            //calculate stations and pairs count after changes
             uint32_t newStationsCount = 0, newPairStationsCount = 0;
             Program_countStations(subwayList, record, &newStationsCount, &newPairStationsCount);
 
+            //update header fields
             if (newStationsCount == 0) header->stationsCount++;
             if (record->destinationStationID != EMPTY && newPairStationsCount == 0) header->pairStationsCount++;
             SubwayRecordList_add(subwayList, record);
 
-            if (searchByID) {
+            //add new index after changes
+            if (hasStationID) {
                 struct IndexableRecord index = {record->rrn, record->originStationID};
                 IndexableRecordAVL_push(avl, &index);
             }
@@ -1181,42 +935,38 @@ bool Program_updateRecord() {
             SubwayRecord_free(record);
         }
 
+        // go to initial byte offset to a new search
+        if (i < searchesCount - 1) FileRepository_goto(dataFile, SUBWAY_RECORD_OFFSET);
+
         SubwayRecordList_free(result);
-        free(criteria);
+        free(fields);
     }
 
-    FileRepository_goto(dataFile, 0);
-    SubwayHeaderRepository_write(header, dataFile);
-
-    FileRepository_close(dataFile);
     SubwayRecordList_free(subwayList);
+
+    //go to header offset and write it
+    FileRepository_goto(dataFile, SUBWAY_HEADER_OFFSET);
+    if (!SubwayHeaderRepository_write(header, dataFile)) {
+        IndexableRecordAVL_free(avl);
+        FileRepository_close(dataFile);
+        free(header);
+        return false;
+    }
+
+    // close file and finish memory
+    FileRepository_close(dataFile);
     free(header);
 
-    //open output file
-    struct DataFile *indexFile = FileRepository_openOrCreate(indexFilePath, WRITE_ONLY);
-    if (indexFile == NULL) {
+    //write index file
+    if (!IndexableRecordAVL_writeOnFile(indexFilePath, avl)) {
         IndexableRecordAVL_free(avl);
         return false;
     }
 
-    //write each AVL indexable record in file
-    for (size_t i = 0; i < avl->size; i++) {
-        const struct IndexableRecord *index = IndexableRecordAVL_getByIndex(avl, i);
-        if (index == NULL) continue;
-        if (!IndexableRecordRepository_writeRecord(indexFile, index)) {
-            FileRepository_close(indexFile);
-            IndexableRecordAVL_free(avl);
-            return false;
-        }
-    }
-
-    // close file and finish memory
-    FileRepository_close(indexFile);
     IndexableRecordAVL_free(avl);
 
     //print binary
     BinarioNaTela(subwayFilePath);
     BinarioNaTela(indexFilePath);
-
     return true;
 }
