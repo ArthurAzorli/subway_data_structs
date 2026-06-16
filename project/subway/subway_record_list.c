@@ -4,27 +4,31 @@
 #include <string.h>
 
 /**
- * @brief Nó da linked list contendo um registro de metrô
- * @note Cada nó armazena uma cópia do registro e um ponteiro para o próximo nó
+ * @struct SubwayRecordNode
+ * @brief Node of the linked list containing a subway record.
+ *
+ * Each node stores a deep copy of a SubwayRecord and a pointer to the next node.
  */
 typedef struct SubwayRecordNode {
-    struct SubwayRecord *record; // Ponteiro para o registro armazenado
-    struct SubwayRecordNode *next; // Ponteiro para o próximo nó (NULL se último)
+    struct SubwayRecord *record; /**< Pointer to the stored subway record */
+    struct SubwayRecordNode *next; /**< Pointer to the next node (NULL if last) */
 } SubwayRecordNode;
 
 /**
- * @brief Estrutura da linked list de registros de metrô
- * @note Mantém referências ao primeiro e último nó para operações eficientes
+ * @struct SubwayRecordList
+ * @brief Linked list structure for subway records.
+ *
+ * Maintains references to the first and last node for efficient operations.
  */
 struct SubwayRecordList {
-    SubwayRecordNode *head; // Primeiro nó da lista (NULL se vazia)
-    SubwayRecordNode *tail; // Último nó da lista (NULL se vazia)
-    size_t size; // Número de elementos na lista
+    SubwayRecordNode *head; /**< First node of the list (NULL if empty) */
+    SubwayRecordNode *tail; /**< Last node of the list (NULL if empty) */
+    size_t size;            /**< Number of elements in the list */
 };
 
 /**
- * @brief Inicializa uma nova lista vazia de registros de metrô
- * @return Ponteiro para a nova lista, ou NULL se falhar na alocação
+ * @brief Initializes a new empty subway record list.
+ * @return Pointer to the new list, or NULL if allocation fails.
  */
 struct SubwayRecordList *SubwayRecordList_init() {
     struct SubwayRecordList *list = malloc(sizeof(struct SubwayRecordList));
@@ -38,9 +42,9 @@ struct SubwayRecordList *SubwayRecordList_init() {
 }
 
 /**
- * @brief Retorna o número de elementos armazenados na lista
- * @param list: Ponteiro para a lista
- * @return Número de elementos, ou 0 se list for NULL
+ * @brief Returns the number of elements stored in the list.
+ * @param list Pointer to the list.
+ * @return Number of elements, or 0 if list is NULL.
  */
 size_t SubwayRecordList_getSize(struct SubwayRecordList *list) {
     if (list == NULL) return 0;
@@ -48,12 +52,16 @@ size_t SubwayRecordList_getSize(struct SubwayRecordList *list) {
 }
 
 /**
- * @brief Obtém uma cópia do registro no índice especificado
- * @param list: Ponteiro para a lista
- * @param index: Índice do registro (0-based)
- * @param record: Ponteiro para struct SubwayRecord onde copiar os dados
- * @return true se conseguir obter o registro, false se índice inválido ou list/record for NULL
- * @note Copia os dados, não retorna uma referência ao nó interno
+ * @brief Retrieves a copy of the record at the specified index.
+ *
+ * Copies all fields of the record, including strings (deep copy).
+ *
+ * @param list Pointer to the list.
+ * @param index Index of the record (0-based).
+ * @param record Pointer to a SubwayRecord where the data will be copied.
+ * @return true if the record was successfully retrieved, false otherwise.
+ *
+ * @note Copies the data, does not return a reference to the internal node.
  */
 bool SubwayRecordList_get(struct SubwayRecordList *list, size_t index, struct SubwayRecord *record) {
     if (list == NULL || record == NULL) return false;
@@ -108,11 +116,12 @@ bool SubwayRecordList_get(struct SubwayRecordList *list, size_t index, struct Su
 }
 
 /**
- * @brief Adiciona um registro no final da lista
- * @param list: Ponteiro para a lista
- * @param record: Ponteiro para o registro a adicionar
- * @note O registro é copiado (deep copy dos dados), não armazenado por referência
- * @note Se o registro contiver strings, elas também são copiadas
+ * @brief Adds a record to the end of the list.
+ *
+ * Performs a deep copy of the record, including strings.
+ *
+ * @param list Pointer to the list.
+ * @param record Pointer to the record to add.
  */
 void SubwayRecordList_add(struct SubwayRecordList *list, struct SubwayRecord *record) {
     if (list == NULL || record == NULL) return;
@@ -184,11 +193,12 @@ void SubwayRecordList_add(struct SubwayRecordList *list, struct SubwayRecord *re
 }
 
 /**
- * @brief Remove o registro no índice especificado
- * @param list: Ponteiro para a lista
- * @param index: Índice do registro a remover (0-based)
- * @note Se o índice for inválido, nada acontece
- * @note A memória do nó e do registro é liberada
+ * @brief Removes the record at the specified index.
+ *
+ * Frees the memory associated with the node and its record.
+ *
+ * @param list Pointer to the list.
+ * @param index Index of the record to remove (0-based).
  */
 void SubwayRecordList_remove(struct SubwayRecordList *list, size_t index) {
     if (list == NULL || index >= list->size) return;
@@ -233,6 +243,14 @@ void SubwayRecordList_remove(struct SubwayRecordList *list, size_t index) {
     list->size--;
 }
 
+/**
+ * @brief Removes a record from the list by its station ID.
+ *
+ * Frees the memory associated with the node and its record.
+ *
+ * @param list Pointer to the list.
+ * @param stationID ID of the station to remove.
+ */
 void SubwayRecordList_removeByStationID(struct SubwayRecordList *list, uint32_t stationID) {
     if (list == NULL || list->size == 0) return;
 
@@ -277,9 +295,11 @@ void SubwayRecordList_removeByStationID(struct SubwayRecordList *list, uint32_t 
 }
 
 /**
- * @brief Libera toda a memória associada à lista e seus registros
- * @param list: Ponteiro para a lista
- * @warning Após esta chamada, o ponteiro não deve ser mais utilizado
+ * @brief Frees all memory associated with the list and its records.
+ *
+ * Recursively frees all nodes and their records.
+ *
+ * @param list Pointer to the list.
  */
 void SubwayRecordList_free(struct SubwayRecordList *list) {
     if (list == NULL) return;

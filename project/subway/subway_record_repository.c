@@ -17,8 +17,10 @@
 
 /**
  * @brief Allocates and initializes a new SubwayRecord structure.
+ *
+ * Sets all numeric fields to EMPTY and all pointer fields to NULL.
+ *
  * @return Pointer to allocated SubwayRecord on success, NULL on allocation failure
- * @note Sets all numeric fields to EMPTY and all pointer fields to NULL
  */
 struct SubwayRecord *SubwayRecord_init() {
     struct SubwayRecord *record = malloc(sizeof(struct SubwayRecord));
@@ -45,7 +47,7 @@ struct SubwayRecord *SubwayRecord_init() {
  * Prints all fields of a record, using "NULO" for empty/null values.
  * Fields are space-separated on a single line.
  *
- * @param record: The record to display (must not be NULL)
+ * @param record Pointer to the record to display (must not be NULL)
  */
 void SubwayRecord_print(const struct SubwayRecord *record) {
     if (record == NULL) return;
@@ -67,9 +69,13 @@ void SubwayRecord_print(const struct SubwayRecord *record) {
     printf("\n");
 }
 
+
 /**
  * @brief Frees all resources associated with a SubwayRecord.
- * @param record: The record to free (can be NULL)
+ *
+ * Releases memory allocated for strings and the record itself.
+ *
+ * @param record Pointer to the record to free (can be NULL)
  */
 void SubwayRecord_free(struct SubwayRecord *record) {
     if (record == NULL) return;
@@ -80,6 +86,14 @@ void SubwayRecord_free(struct SubwayRecord *record) {
 
 // ======= Private Subway Record Repository Functions ======= \\
 
+/**
+ * @brief Checks if the next record in the file is marked as removed.
+ *
+ * Reads the removal mark from the file and returns true if the record is removed.
+ *
+ * @param dataFile Pointer to the DataFile structure
+ * @return true if the next record is removed, false otherwise
+ */
 bool SubwayRecordRepository_isNextRemoved(struct DataFile *dataFile) {
     uint8_t removedMark = TRUE_MARK;
     FileRepository_read(dataFile, BOOLEAN, &removedMark, 1);
@@ -176,6 +190,14 @@ bool SubwayRecordRepository_readRecordData(struct DataFile *dataFile, struct Sub
 
 // ======= Public Subway Record Repository Functions ======= \\
 
+/**
+ * @brief Reads a subway record from the file.
+ *
+ * Skips removed records and reads all fields of valid records.
+ *
+ * @param dataFile Pointer to the DataFile structure
+ * @return Pointer to the read SubwayRecord, or NULL if removed/invalid
+ */
 struct SubwayRecord *SubwayRecordRepository_readRecord(struct DataFile *dataFile) {
     if (dataFile == NULL) return NULL;
 
@@ -196,6 +218,16 @@ struct SubwayRecord *SubwayRecordRepository_readRecord(struct DataFile *dataFile
     return record;
 }
 
+/**
+ * @brief Writes a subway record to the file.
+ *
+ * Writes all fields of the record, including variable-length strings,
+ * and fills remaining space with trash ('$').
+ *
+ * @param dataFile Pointer to the DataFile structure
+ * @param record Pointer to the SubwayRecord to write
+ * @return true if the record was successfully written, false otherwise
+ */
 bool SubwayRecordRepository_writeRecord(struct DataFile *dataFile, struct SubwayRecord *record) {
     if (dataFile == NULL || record == NULL) return false;
 
@@ -231,6 +263,15 @@ bool SubwayRecordRepository_writeRecord(struct DataFile *dataFile, struct Subway
     return true;
 }
 
+/**
+ * @brief Marks a record as removed in the file.
+ *
+ * Writes the removal mark and updates the lastRemoved pointer.
+ *
+ * @param dataFile Pointer to the DataFile structure
+ * @param lastRemoved RRN of the last removed record
+ * @return true if the record was successfully marked as removed, false otherwise
+ */
 bool SubwayRecordRepository_removeRecord(struct DataFile *dataFile, const uint32_t lastRemoved) {
     if (dataFile == NULL) return false;
     const uint8_t removedMark = TRUE_MARK;
@@ -240,6 +281,15 @@ bool SubwayRecordRepository_removeRecord(struct DataFile *dataFile, const uint32
     return true;
 }
 
+/**
+ * @brief Reads the next removed record pointer from the file.
+ *
+ * If the current record is marked as removed, retrieves the nextRemoved value.
+ *
+ * @param dataFile Pointer to the DataFile structure
+ * @param nextRemoved Pointer to store the next removed record RRN
+ * @return true if successfully read, false otherwise
+ */
 bool SubwayRecordRepository_readNextRemoved(struct DataFile *dataFile, uint32_t *nextRemoved) {
     if (dataFile == NULL) return false;
     if (!SubwayRecordRepository_isNextRemoved(dataFile)) return false;

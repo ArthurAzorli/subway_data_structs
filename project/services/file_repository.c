@@ -30,6 +30,16 @@ struct DataFile {
     long byteOffset; /**< Current byte offset within the file */
 };
 
+/**
+ * @brief Sets the consistency mark of the file.
+ *
+ * Updates the consistency flag at the beginning of the file. If the file is marked
+ * inconsistent, it indicates that modifications are in progress.
+ *
+ * @param dataFile Pointer to the DataFile structure
+ * @param consistent true to mark as consistent, false to mark as inconsistent
+ * @return true if the operation succeeded, false otherwise
+ */
 bool FileRepository_setConsistent(struct DataFile *dataFile, const bool consistent) {
     //se o estado for diferente ou ainda não está escrito, setta a consistencia
     if (dataFile->consistent == consistent) return true;
@@ -48,6 +58,17 @@ bool FileRepository_setConsistent(struct DataFile *dataFile, const bool consiste
     return true;
 }
 
+/**
+ * @brief Opens or creates a binary data file.
+ *
+ * Initializes a DataFile structure and opens the file in the specified mode.
+ * If opening in write mode, the file is created or truncated. If opening in read
+ * or read/write mode, the consistency mark is validated.
+ *
+ * @param path Path to the file
+ * @param mode FileMode (READ_ONLY, WRITE_ONLY, READ_WRITE)
+ * @return Pointer to the DataFile structure, or NULL if opening fails
+ */
 struct DataFile *FileRepository_openOrCreate(const char path[], const enum FileMode mode) {
     struct DataFile *dataFile = malloc(sizeof(struct DataFile));
     if (!dataFile) return NULL;
@@ -87,7 +108,14 @@ struct DataFile *FileRepository_openOrCreate(const char path[], const enum FileM
     return dataFile;
 }
 
-
+/**
+ * @brief Moves the file pointer by a relative offset.
+ *
+ * Advances the file pointer by the specified number of bytes relative to its current position.
+ *
+ * @param file Pointer to the DataFile structure
+ * @param movement Number of bytes to move (positive or negative)
+ */
 void FileRepository_move(struct DataFile *file, const long movement) {
     if (file == NULL || file->file == NULL || movement == 0) return;
     const long byteOffsetFinal = file->byteOffset + movement;
@@ -95,6 +123,14 @@ void FileRepository_move(struct DataFile *file, const long movement) {
     file->byteOffset = byteOffsetFinal;
 }
 
+/**
+ * @brief Moves the file pointer to an absolute offset.
+ *
+ * Positions the file pointer at the specified byte offset within the data section.
+ *
+ * @param file Pointer to the DataFile structure
+ * @param byteOffset Absolute byte offset (starting after the consistency mark)
+ */
 void FileRepository_goto(struct DataFile *file, const long byteOffset) {
     if (file == NULL || file->file == NULL || byteOffset < 0) return;
     const long absByteOffset = byteOffset + 1;
@@ -103,6 +139,17 @@ void FileRepository_goto(struct DataFile *file, const long byteOffset) {
     file->byteOffset = absByteOffset;
 }
 
+/**
+ * @brief Writes data to the file.
+ *
+ * Writes a buffer of data elements to the file. Marks the file as inconsistent before writing.
+ *
+ * @param file Pointer to the DataFile structure
+ * @param type DataType (INTEGER or BYTE)
+ * @param buffer Pointer to the data buffer
+ * @param count Number of elements to write
+ * @return true if the write succeeded, false otherwise
+ */
 bool FileRepository_write(struct DataFile *file, const enum DataType type, const void *buffer, const size_t count) {
     if (file == NULL || file->file == NULL || buffer == NULL) return false;
     if (file->mode == READ_ONLY) return false;
@@ -119,7 +166,17 @@ bool FileRepository_write(struct DataFile *file, const enum DataType type, const
     return true;
 }
 
-
+/**
+ * @brief Reads data from the file.
+ *
+ * Reads a buffer of data elements from the file. Automatically skips the consistency mark if needed.
+ *
+ * @param file Pointer to the DataFile structure
+ * @param type DataType (INTEGER or BYTE)
+ * @param buffer Pointer to the buffer to store read data
+ * @param count Number of elements to read
+ * @return true if the read succeeded, false otherwise
+ */
 bool FileRepository_read(struct DataFile *file, const enum DataType type, void *buffer, const size_t count) {
     if (file == NULL || file->file == NULL || buffer == NULL) return false;
     if (file->mode == WRITE_ONLY) return false;
@@ -138,7 +195,14 @@ bool FileRepository_read(struct DataFile *file, const enum DataType type, void *
     return true;
 }
 
-
+/**
+ * @brief Closes the file and releases resources.
+ *
+ * Ensures the file is marked consistent before closing. Flushes buffers, closes the file,
+ * and frees the DataFile structure.
+ *
+ * @param file Pointer to the DataFile structure
+ */
 void FileRepository_close(struct DataFile *file) {
     if (file == NULL || file->file == NULL) return;
     if (!file->consistent && file->mode != READ_ONLY) {

@@ -1,7 +1,3 @@
-//
-// Created by arthu on 15/06/2026.
-//
-
 #include "search_service.h"
 #include "types.h"
 #include  "../lib/provided.h"
@@ -13,6 +9,18 @@
 
 #define FIELD_MAX_LENGTH 101
 
+/**
+ * @brief Reads subway search fields and their values from standard input.
+ *
+ * This function reads the number of search criteria, then iterates through each
+ * field name and assigns the corresponding field type and value. If the field
+ * is "codEstacao", it is placed at the last position to prioritize ID-based searches.
+ *
+ * @param fields Array of SubwayFieldValue structures to store the criteria
+ * @param fieldsCount Pointer to store the number of fields read
+ * @param hasStationID Pointer to flag whether StationID was included in the criteria
+ * @return true if all fields were successfully read, false otherwise
+ */
 bool SearchService_readSubwayFields(struct SubwayFieldValue *fields, size_t *fieldsCount, bool *hasStationID) {
     // Reads the number of criteria for the search
     if (scanf("%zu", fieldsCount) != 1) return false;
@@ -59,6 +67,17 @@ bool SearchService_readSubwayFields(struct SubwayFieldValue *fields, size_t *fie
     return true;
 }
 
+/**
+ * @brief Checks if a subway record matches a set of search criteria.
+ *
+ * Iterates through all provided search fields and compares them against the
+ * corresponding values in the record. Returns false if any field does not match.
+ *
+ * @param record Pointer to the SubwayRecord to check
+ * @param fields Array of SubwayFieldValue criteria
+ * @param fieldsCount Number of criteria in the array
+ * @return true if the record matches all criteria, false otherwise
+ */
 bool SearchService_recordMatchesFields(const struct SubwayRecord *record, struct SubwayFieldValue *fields,
                                        size_t fieldsCount) {
     if (record == NULL || fields == NULL) return false;
@@ -118,6 +137,18 @@ bool SearchService_recordMatchesFields(const struct SubwayRecord *record, struct
     return true;
 }
 
+/**
+ * @brief Performs a sequential search over all subway records.
+ *
+ * Reads search criteria from input and iterates through all records in the database.
+ * Adds matching records to the provided list. If the criteria include StationID,
+ * the search stops after the first match.
+ *
+ * @param header Pointer to the DataSubwayHeader containing metadata
+ * @param file Pointer to the DataFile representing the subway database
+ * @param subwayList Pointer to the list where matching records will be stored
+ * @return true if the search executed successfully, false otherwise
+ */
 bool SearchService_sequencialSearch(const struct DataSubwayHeader *header, struct DataFile *file,
                                     struct SubwayRecordList *subwayList) {
 
@@ -161,7 +192,19 @@ bool SearchService_sequencialSearch(const struct DataSubwayHeader *header, struc
     return true;
 }
 
-
+/**
+ * @brief Performs an indexable search using an AVL tree of station IDs.
+ *
+ * Reads search criteria from input. If StationID is included, uses the AVL index
+ * to locate the record directly. Otherwise, falls back to sequential search.
+ * Matching records are added to the provided list.
+ *
+ * @param header Pointer to the DataSubwayHeader containing metadata
+ * @param file Pointer to the DataFile representing the subway database
+ * @param avl Pointer to the IndexableRecordAVL structure containing indexed records
+ * @param subwayList Pointer to the list where matching records will be stored
+ * @return true if the search executed successfully, false otherwise
+ */
 bool SearchService_indexableSearch(const struct DataSubwayHeader *header, struct DataFile *file,
                                        const struct IndexableRecordAVL *avl,
                                        struct SubwayRecordList *subwayList) {

@@ -32,7 +32,7 @@ void Program_countStations(
     if (recordList == NULL || record == NULL) return;
     if (SubwayRecordList_getSize(recordList) == 0) return;
 
-    struct SubwayRecord *other = malloc(sizeof(struct SubwayRecord));
+    struct SubwayRecord *other = SubwayRecord_init();
     if (other == NULL) return;
 
     for (size_t i = 0; i < SubwayRecordList_getSize(recordList); i++) {
@@ -46,7 +46,7 @@ void Program_countStations(
             *pairStationsCount += 1;
         }
     }
-    free(other);
+    SubwayRecord_free(other);
 }
 
 
@@ -113,7 +113,7 @@ bool Program_initSubwayFile() {
         return false;
     }
 
-    struct SubwayRecord *record1 = malloc(sizeof(struct SubwayRecord));
+    struct SubwayRecord *record1 = SubwayRecord_init();
     if (record1 == NULL) {
         FileRepository_close(dataFile);
         SubwayRecordList_free(recordList);
@@ -126,15 +126,15 @@ bool Program_initSubwayFile() {
         if (!SubwayRecordList_get(recordList, i, record1)) {
             FileRepository_close(dataFile);
             SubwayRecordList_free(recordList);
+            SubwayRecord_free(record1);
             free(header);
-            free(record1);
             return false;
         }
         if (!SubwayRecordRepository_writeRecord(dataFile, record1)) {
             FileRepository_close(dataFile);
             SubwayRecordList_free(recordList);
+            SubwayRecord_free(record1);
             free(header);
-            free(record1);
             return false;
         }
     }
@@ -144,8 +144,9 @@ bool Program_initSubwayFile() {
 
     //free memory
     SubwayRecordList_free(recordList);
+    SubwayRecord_free(record1);
     free(header);
-    free(record1);
+
 
     //show binary
     BinarioNaTela(outputFilePath);
