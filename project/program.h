@@ -28,4 +28,14 @@ bool Program_insertRecord();
 
 bool Program_updateRecord();
 
+bool Program_initGraph();
+
+bool Program_findShortestPath();
+
+bool Program_minimumTreeSource();
+
+bool Program_countCycles();
+
+
+
 #endif //TRABALHO01_PROGRAM_H

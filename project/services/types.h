@@ -8,9 +8,14 @@
 #define EMPTY 0xFFFFFFFF
 #endif
 
+
+#ifndef INFINITY
+#define INFINITY 0xFFFFFFFF
+#endif
+
 typedef const char *String;
 
-void printUint32(const uint32_t value);
+void printUint32(uint32_t value);
 
 void printString(const char *value);
 

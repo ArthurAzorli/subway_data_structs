@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "subway/graph.h"
+
 
 #define INPUT_MAX_LENGTH 101
 #define SUBWAY_HEADER_OFFSET 0
@@ -352,7 +354,7 @@ bool Program_searchRecordByIndexable() {
     //read files paths and searches count
     uint32_t searchesCount;
     char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
-    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+    if (scanf("%s %s %u", subwayFilePath, indexFilePath, &searchesCount) != 3) return false;
 
     // If there are no searches, do nothing
     if (searchesCount == 0) return true;
@@ -433,7 +435,7 @@ bool Program_removeRecords() {
     //read files paths and searches count
     uint32_t searchesCount;
     char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
-    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+    if (scanf("%s %s %u", subwayFilePath, indexFilePath, &searchesCount) != 3) return false;
 
     // If there are no searches, do nothing
     if (searchesCount == 0) return true;
@@ -572,7 +574,7 @@ bool Program_insertRecord() {
     //read files paths and inserts count
     uint32_t insertsCount;
     char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
-    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &insertsCount) != 3) return false;
+    if (scanf("%s %s %u", subwayFilePath, indexFilePath, &insertsCount) != 3) return false;
 
     // If there are no searches, do nothing
     if (insertsCount == 0) return true;
@@ -736,7 +738,7 @@ bool Program_updateRecord() {
     //read files paths and searches count
     uint32_t searchesCount;
     char indexFilePath[INPUT_MAX_LENGTH], subwayFilePath[INPUT_MAX_LENGTH];
-    if (scanf("%s %s %u", &subwayFilePath, &indexFilePath, &searchesCount) != 3) return false;
+    if (scanf("%s %s %u", subwayFilePath, indexFilePath, &searchesCount) != 3) return false;
 
     // If there are no searches, do nothing
     if (searchesCount == 0) return true;
@@ -969,5 +971,238 @@ bool Program_updateRecord() {
     //print binary
     BinarioNaTela(subwayFilePath);
     BinarioNaTela(indexFilePath);
+    return true;
+}
+
+bool Program_initGraph() {
+    char filePath[INPUT_MAX_LENGTH];
+    if (scanf("%s", filePath) != 1) return false;
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(filePath, READ_WRITE);
+    if (dataFile == NULL) return false;
+
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    size_t stationsCount = header->stationsCount;
+
+    //read all records and adds on list
+    struct SubwayRecordList *subwayList = SubwayRecordList_init();
+    for (uint32_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+        if (record == NULL) continue; // removed or invalid
+        SubwayRecordList_add(subwayList, record);
+        SubwayRecord_free(record);
+    }
+
+    //close File
+    free(header);
+    FileRepository_close(dataFile);
+
+    //init graph
+    struct Graph *graph = Graph_init(stationsCount);
+    if (graph == NULL) {
+        SubwayRecordList_free(subwayList);
+        return false;
+    }
+
+    //fill graph with subway record in the list and print its
+    Graph_fillByList(graph, subwayList);
+    Graph_print(graph);
+
+    //free memory
+    Graph_free(graph);
+    SubwayRecordList_free(subwayList);
+    return true;
+}
+
+bool Program_findShortestPath() {
+    printf("ué");
+    char filePath[INPUT_MAX_LENGTH], indexFilePath[INPUT_MAX_LENGTH];
+    char nameFieldOrigin[INPUT_MAX_LENGTH], originStation[INPUT_MAX_LENGTH];
+    char nameFieldDestiny[INPUT_MAX_LENGTH], destinyStation[INPUT_MAX_LENGTH];
+    printf("ué");
+    if (scanf("%s %s", filePath, indexFilePath) != 2) return false;
+
+    printf("ué");
+
+    scanf("%s", nameFieldOrigin);
+    ScanQuoteString(originStation);
+
+    scanf("%s", nameFieldDestiny);
+    ScanQuoteString(destinyStation);
+
+    printf("%s: %s e %s:%s\n", nameFieldOrigin, originStation, nameFieldDestiny, destinyStation);
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(filePath, READ_WRITE);
+    if (dataFile == NULL) return false;
+
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    const size_t stationsCount = header->stationsCount;
+
+    //read all records and adds on list
+    struct SubwayRecordList *subwayList = SubwayRecordList_init();
+    for (uint32_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+        if (record == NULL) continue; // removed or invalid
+        SubwayRecordList_add(subwayList, record);
+        SubwayRecord_free(record);
+    }
+
+    //close File
+    free(header);
+    FileRepository_close(dataFile);
+
+    //init graph and params
+    uint32_t distance;
+    size_t pathLength;
+    char **path = calloc(stationsCount, sizeof(char *));
+    struct Graph *graph = Graph_init(stationsCount);
+    if (graph == NULL) {
+        SubwayRecordList_free(subwayList);
+        return false;
+    }
+
+
+    //fill graph with subway record in the list
+    Graph_fillByList(graph, subwayList);
+    Graph_dijstra(graph, originStation, destinyStation, &pathLength, path, &distance);
+    if (distance == INFINITY) {
+        printf("Não existe caminho entre as estações solicitadas.\n");
+    } else {
+        printf("Numero de estacoes que serao percorridas: %zu\n", pathLength);
+        printf("Distancia que sera percorrida: %d\n", distance);
+
+        for (long i = (long) pathLength - 1; i >= 0; i--) {
+            printf("%s%s", path[i], i == 0 ? "" : ", ");
+        }
+        printf("\n");
+    }
+
+    //free memory
+    free(path);
+    Graph_free(graph);
+    SubwayRecordList_free(subwayList);
+    return true;
+}
+
+bool Program_minimumTreeSource() {
+    char filePath[INPUT_MAX_LENGTH];
+    char nameFieldOrigin[INPUT_MAX_LENGTH], originStation[INPUT_MAX_LENGTH];
+    if (scanf("%s", filePath) != 1) return false;
+
+    scanf("%s", nameFieldOrigin);
+    ScanQuoteString(originStation);
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(filePath, READ_WRITE);
+    if (dataFile == NULL) return false;
+
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    const size_t stationsCount = header->stationsCount;
+
+    //read all records and adds on list
+    struct SubwayRecordList *subwayList = SubwayRecordList_init();
+    for (uint32_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+        if (record == NULL) continue; // removed or invalid
+        SubwayRecordList_add(subwayList, record);
+        SubwayRecord_free(record);
+    }
+
+    //close File
+    free(header);
+    FileRepository_close(dataFile);
+
+    //init graph and params
+    struct Graph *graph = Graph_init(stationsCount);
+    if (graph == NULL) {
+        SubwayRecordList_free(subwayList);
+        return false;
+    }
+
+
+    //fill graph with subway record in the list
+    Graph_fillByList(graph, subwayList);
+    bool result = Graph_printPrim(graph, originStation);
+
+    Graph_free(graph);
+    SubwayRecordList_free(subwayList);
+    return result;
+}
+
+bool Program_countCycles() {
+    char filePath[INPUT_MAX_LENGTH];
+    char nameFieldOrigin[INPUT_MAX_LENGTH], originStation[INPUT_MAX_LENGTH];
+    if (scanf("%s", filePath) != 1) return false;
+
+    scanf("%s", nameFieldOrigin);
+    ScanQuoteString(originStation);
+
+    //open output file
+    struct DataFile *dataFile = FileRepository_openOrCreate(filePath, READ_WRITE);
+    if (dataFile == NULL) return false;
+
+
+    //read header
+    struct DataSubwayHeader *header = SubwayHeaderRepository_read(dataFile);
+    if (header == NULL) {
+        FileRepository_close(dataFile);
+        return false;
+    }
+
+    const size_t stationsCount = header->stationsCount;
+
+    //read all records and adds on list
+    struct SubwayRecordList *subwayList = SubwayRecordList_init();
+    for (uint32_t i = 0; i < header->nextInsert; i++) {
+        struct SubwayRecord *record = SubwayRecordRepository_readRecord(dataFile);
+        if (record == NULL) continue; // removed or invalid
+        SubwayRecordList_add(subwayList, record);
+        SubwayRecord_free(record);
+    }
+
+    //close File
+    free(header);
+    FileRepository_close(dataFile);
+
+    //init graph and params
+    struct Graph *graph = Graph_init(stationsCount);
+    if (graph == NULL) {
+        SubwayRecordList_free(subwayList);
+        return false;
+    }
+
+
+    //fill graph with subway record in the list
+    Graph_fillByList(graph, subwayList);
+    long count = Graph_cyclesCount(graph, originStation);
+    if (count <= 0) count = -1;
+    printf("Quantidade de ciclos: %ld\n", count);
+
+
+    Graph_free(graph);
+    SubwayRecordList_free(subwayList);
     return true;
 }

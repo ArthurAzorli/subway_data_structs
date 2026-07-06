@@ -17,7 +17,7 @@
 int main() {
     int option;
     if (scanf("%d", &option) != 1) return 1;
-
+    printf("ué");
     switch (option) {
         case 1: {
             if (!Program_initSubwayFile()) printf("Falha no processamento do arquivo.\n");
@@ -53,6 +53,22 @@ int main() {
         }
         case 9: {
             if (!Program_updateRecord()) printf("Falha no processamento do arquivo.\n");
+            break;
+        }
+        case 10: {
+            if (!Program_initGraph()) printf("Falha na execução da funcionalidade.\n");
+            break;
+        }
+        case 11: {
+            if (!Program_findShortestPath()) printf("Falha na execução da funcionalidade.\n");
+            break;
+        }
+        case 12: {
+            if (!Program_minimumTreeSource()) printf("Falha na execução da funcionalidade.\n");
+            break;
+        }
+        case 13: {
+            if (!Program_countCycles()) printf("Falha na execução da funcionalidade.\n");
             break;
         }
         default: {

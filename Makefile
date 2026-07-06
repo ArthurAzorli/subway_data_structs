@@ -16,7 +16,8 @@ SRC = main.c \
       project/subway/subway_record_repository.c \
       project/subway/input/input_repository.c \
       project/indexable/indexable_record_avl.c \
-      project/indexable/indexable_record_repository.c
+      project/indexable/indexable_record_repository.c \
+      project/subway/graph.c
 
 
 OBJ = $(SRC:.c=.o)
