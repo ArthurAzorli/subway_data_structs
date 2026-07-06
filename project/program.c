@@ -1023,22 +1023,16 @@ bool Program_initGraph() {
 }
 
 bool Program_findShortestPath() {
-    printf("ué");
     char filePath[INPUT_MAX_LENGTH], indexFilePath[INPUT_MAX_LENGTH];
     char nameFieldOrigin[INPUT_MAX_LENGTH], originStation[INPUT_MAX_LENGTH];
     char nameFieldDestiny[INPUT_MAX_LENGTH], destinyStation[INPUT_MAX_LENGTH];
-    printf("ué");
     if (scanf("%s %s", filePath, indexFilePath) != 2) return false;
-
-    printf("ué");
 
     scanf("%s", nameFieldOrigin);
     ScanQuoteString(originStation);
 
     scanf("%s", nameFieldDestiny);
     ScanQuoteString(destinyStation);
-
-    printf("%s: %s e %s:%s\n", nameFieldOrigin, originStation, nameFieldDestiny, destinyStation);
 
     //open output file
     struct DataFile *dataFile = FileRepository_openOrCreate(filePath, READ_WRITE);
@@ -1084,7 +1078,7 @@ bool Program_findShortestPath() {
     if (distance == INFINITY) {
         printf("Não existe caminho entre as estações solicitadas.\n");
     } else {
-        printf("Numero de estacoes que serao percorridas: %zu\n", pathLength);
+        printf("Numero de estacoes que serao percorridas: %zu\n", (pathLength-1));
         printf("Distancia que sera percorrida: %d\n", distance);
 
         for (long i = (long) pathLength - 1; i >= 0; i--) {
@@ -1101,9 +1095,9 @@ bool Program_findShortestPath() {
 }
 
 bool Program_minimumTreeSource() {
-    char filePath[INPUT_MAX_LENGTH];
+    char filePath[INPUT_MAX_LENGTH], indexFilePath[INPUT_MAX_LENGTH];
     char nameFieldOrigin[INPUT_MAX_LENGTH], originStation[INPUT_MAX_LENGTH];
-    if (scanf("%s", filePath) != 1) return false;
+    if (scanf("%s %s", filePath, indexFilePath) != 2) return false;
 
     scanf("%s", nameFieldOrigin);
     ScanQuoteString(originStation);
@@ -1142,7 +1136,6 @@ bool Program_minimumTreeSource() {
         return false;
     }
 
-
     //fill graph with subway record in the list
     Graph_fillByList(graph, subwayList);
     bool result = Graph_printPrim(graph, originStation);
@@ -1153,9 +1146,9 @@ bool Program_minimumTreeSource() {
 }
 
 bool Program_countCycles() {
-    char filePath[INPUT_MAX_LENGTH];
+    char filePath[INPUT_MAX_LENGTH], indexFilePath[INPUT_MAX_LENGTH];
     char nameFieldOrigin[INPUT_MAX_LENGTH], originStation[INPUT_MAX_LENGTH];
-    if (scanf("%s", filePath) != 1) return false;
+    if (scanf("%s %s", filePath, indexFilePath) != 2) return false;
 
     scanf("%s", nameFieldOrigin);
     ScanQuoteString(originStation);

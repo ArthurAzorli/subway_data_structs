@@ -186,17 +186,16 @@ void Graph_addEdge(struct Graph *graph, const char *origin, const char *destiny,
 
     while (current != NULL && strcmp(current->destinationStationName, destiny) <= 0) {
         if (strcmp(current->destinationStationName, destiny) == 0) {
-
             //exit if line exists on the lines names list
             for (size_t i = 0; i < current->linesCount; i++) {
                 if (strcmp(current->lines[i], lineName) == 0) return;
             }
 
             //realloc new space
-            current->lines = realloc(current->lines, (current->linesCount + 1) * sizeof(char*));
+            current->lines = realloc(current->lines, (current->linesCount + 1) * sizeof(char *));
 
             //insert in the order
-            long pos = (long)current->linesCount;
+            long pos = (long) current->linesCount;
             while (pos > 0 && strcmp(current->lines[pos - 1], lineName) > 0) {
                 current->lines[pos] = current->lines[pos - 1];
                 pos--;
@@ -219,7 +218,7 @@ void Graph_addEdge(struct Graph *graph, const char *origin, const char *destiny,
     newNode->destinationStationName = strdup(destiny);
     newNode->distance = distance;
     newNode->next = current;
-    newNode->lines = malloc(sizeof(char*));
+    newNode->lines = malloc(sizeof(char *));
     if (newNode->lines != NULL) {
         newNode->lines[0] = strdup(lineName);
         newNode->linesCount = 1;
@@ -300,8 +299,6 @@ void Graph_dijstra(struct Graph *graph, const char *startStationName, const char
                 if (pathUDistance < distances[v]) {
                     distances[v] = pathUDistance;
                     parents[v] = u;
-                } else if (pathUDistance == distances[v]) {
-                    if (u < parents[v]) parents[v] = u;
                 }
             }
             edge = edge->next;
@@ -312,9 +309,10 @@ void Graph_dijstra(struct Graph *graph, const char *startStationName, const char
 
     *distance = distances[destinyIndex];
     long currentIndex = destinyIndex;
-    while (currentIndex != -1) {
-        path[*pathLength++] = strdup(graph->vertices[currentIndex].stationName);
+    while (currentIndex != -1 && *pathLength < graph->verticesCount) {
+        path[*pathLength] = strdup(graph->vertices[currentIndex].stationName);
         currentIndex = parents[currentIndex];
+        (*pathLength)++;
     }
 }
 
@@ -327,12 +325,8 @@ bool Graph_printPrim(struct Graph *graph, const char *startStationName) {
     for (size_t i = 0; i < graph->verticesCount; i++) {
         GraphEdge *edge = graph->vertices[i].head;
         while (edge != NULL) {
-            for (size_t j = 0; j < edge->linesCount; j++) {
-                Graph_addEdge(undirGraph, graph->vertices[i].stationName, edge->destinationStationName, edge->distance,
-                              edge->lines[j]);
-                Graph_addEdge(undirGraph, edge->destinationStationName, graph->vertices[i].stationName, edge->distance,
-                              edge->lines[j]);
-            }
+            Graph_addEdge(undirGraph, graph->vertices[i].stationName, edge->destinationStationName, edge->distance, "");
+            Graph_addEdge(undirGraph, edge->destinationStationName, graph->vertices[i].stationName, edge->distance, "");
             edge = edge->next;
         }
     }
@@ -342,6 +336,7 @@ bool Graph_printPrim(struct Graph *graph, const char *startStationName) {
         Graph_free(undirGraph);
         return false;
     }
+
     struct Graph *minimumTree = Graph_init(graph->verticesCount);
     if (minimumTree == NULL) {
         Graph_free(undirGraph);
@@ -351,6 +346,14 @@ bool Graph_printPrim(struct Graph *graph, const char *startStationName) {
     bool visited[graph->verticesCount];
     long parents[graph->verticesCount];
     uint32_t distances[graph->verticesCount];
+
+    for (size_t i = 0; i < graph->verticesCount; i++) {
+        distances[i] = INFINITY;
+        parents[i] = -1;
+        visited[i] = false;
+    }
+
+    distances[startIndex] = 0;
 
     for (size_t i = 0; i < undirGraph->verticesCount; i++) {
         long u = -1;
@@ -375,11 +378,11 @@ bool Graph_printPrim(struct Graph *graph, const char *startStationName) {
         GraphEdge *edge = undirGraph->vertices[u].head;
         while (edge != NULL) {
             const long v = Graph_findIndexByName(undirGraph, edge->destinationStationName);
-            if (v != -1 && !visited[v] && edge->distance < distances[v]) {
-                distances[v] = edge->distance;
-                parents[v] = u;
-            } else if (v != -1 && !visited[v] && edge->distance == distances[v] && parents[v] != -1) {
-                if (u < parents[v]) {
+            if (v != -1 && !visited[v]) {
+                if (edge->distance < distances[v]) {
+                    distances[v] = edge->distance;
+                    parents[v] = u;
+                } else if (edge->distance == distances[v] && parents[v] != -1 && u < parents[v]) {
                     parents[v] = u;
                 }
             }
@@ -390,6 +393,9 @@ bool Graph_printPrim(struct Graph *graph, const char *startStationName) {
     const long treeStartIndex = Graph_findIndexByName(minimumTree, startStationName);
     if (treeStartIndex != -1) {
         bool visitedDFS[minimumTree->verticesCount];
+        for (size_t i = 0; i < minimumTree->verticesCount; i++) {
+            visitedDFS[i] = false;
+        }
         Graph_dfsPrintPrim(minimumTree, treeStartIndex, visitedDFS);
     }
 
@@ -402,7 +408,12 @@ long Graph_cyclesCount(struct Graph *graph, const char *startStationName) {
     if (graph == NULL || startStationName == NULL) return -1;
     const long currentIndex = Graph_findIndexByName(graph, startStationName);
     if (currentIndex == -1) return -1;
-    bool visited[graph->capacity];
+
+    bool visited[graph->verticesCount];
+    for (size_t i = 0; i < graph->verticesCount; i++) {
+        visited[i] = false;
+    }
+
     return Graph_dfsCyclesCount(graph, currentIndex, currentIndex, visited);
 }
 

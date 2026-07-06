@@ -17,7 +17,6 @@
 int main() {
     int option;
     if (scanf("%d", &option) != 1) return 1;
-    printf("ué");
     switch (option) {
         case 1: {
             if (!Program_initSubwayFile()) printf("Falha no processamento do arquivo.\n");
